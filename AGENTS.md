@@ -16,14 +16,15 @@ other VI History product line.
 The integration branch is `develop`; feature work targets `develop` before
 promotion to `main`.
 
-Marketplace publication is disabled until a later governing decision admits a
-release channel.
+Marketplace publication is disabled. The governing decision is recorded in
+`docs/decisions/ADR-001-marketplace-publication-disabled.md` (closed under
+Issue #5). A future ADR or bridge admission must explicitly supersede that
+decision before any Marketplace work is started.
 
-Implementation for `runtime-contract-host-provider-v1` begins only after a
-named Implementation Admission Unit has a preflight record with `status: pass`.
-The current unit is `IAU-runtime-contract-runtime-facts-v1`, covering tasks
-`T016` through `T021`, and its preflight is `pass`. Tasks `T022` through
-`T030` remain blocked until that IAU merges.
+Implementation for `runtime-contract-host-provider-v1` is complete. All admitted
+tasks (T007–T030) were implemented and closed under Issue #4. No current
+Implementation Admission Unit is active. Future implementation work requires a
+new bridge admission record before code changes begin.
 
 For Copilot local or web implementation work, read
 `docs/development/copilot-workflow.md` before changing code. It names the

@@ -130,5 +130,6 @@
   "blockedUntilProofIntakeMerge": [],
   "requirementMaturityBasis": "governed released extension supports requirement maturity, not source reuse",
   "implementationSharing": "none",
-  "marketplacePublication": "disabled-until-later-adr"
+  "marketplacePublication": "disabled",
+  "marketplacePublicationAdr": "docs/decisions/ADR-001-marketplace-publication-disabled.md"
 }

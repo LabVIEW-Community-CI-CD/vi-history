@@ -25,6 +25,11 @@ Read these before changing code:
 
 ## Current Status
 
+GitHub Issue #5 closed the Marketplace publication governance decision. The
+decision is recorded in
+`docs/decisions/ADR-001-marketplace-publication-disabled.md`. Marketplace
+publication remains disabled and no packaging or release work is admitted.
+
 GitHub Issue #4 completed the runtime-contract implementation loop through
 `IAU-runtime-contract-proof-intake-v1`. No new Copilot implementation should
 start from Issue #4.
@@ -64,7 +69,7 @@ Do not implement these without a separate bridge admission:
 - Marketplace publication or packaging
 - source copying from another VI History product line
 
-If a blocked task appears necessary, stop and update Issue #4 with the blocker
+If a blocked task appears necessary, stop and open a new issue with the blocker
 instead of expanding the implementation scope.
 
 ## Local Copilot Flow
@@ -105,6 +110,6 @@ The PR summary should include:
 
 ## Clarification Rule
 
-When behavior is ambiguous, do not infer from private repositories. Record the
-question on Issue #4 and wait for the public Spec Kit or admission artifacts to
-be updated.
+When behavior is ambiguous, do not infer from private repositories. Open a new
+public issue and wait for the public Spec Kit or admission artifacts to be
+updated.
