@@ -1,5 +1,16 @@
+// @ts-nocheck
+// TODO: Gradually add proper TypeScript types. This file was migrated from JavaScript.
+// See ADR-003-typescript-adoption.md for the migration plan.
+
 import fs from "node:fs/promises";
 import path from "node:path";
+
+// ============================================================================
+// Type Definitions for Runtime Settings CLI
+// ============================================================================
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyInput = Record<string, any>;
 
 export const RUNTIME_SETTINGS_CLI_SETTINGS_WRITE_REQUIREMENTS = Object.freeze({
   settingsWrite: Object.freeze(["VHS-REQ-537"]),
@@ -754,7 +765,7 @@ export function allRuntimeSettingsCliTerminalIoAdapterRequirementIds() {
   );
 }
 
-export function createRuntimeSettingsTerminalEntrypoint(input = {}) {
+export function createRuntimeSettingsTerminalEntrypoint(input: AnyInput = {}) {
   const terminalSession = normalizeTerminalSession(input.terminalSession);
   if (!terminalSession.admitted) {
     return terminalEntrypointBlockedResult({
@@ -792,7 +803,7 @@ export function createRuntimeSettingsTerminalEntrypoint(input = {}) {
   });
 }
 
-export function createRuntimeSettingsTerminalPromptLoop(input = {}) {
+export function createRuntimeSettingsTerminalPromptLoop(input: AnyInput = {}) {
   const entrypoint = input.entrypoint ?? input.terminalEntrypoint ?? createRuntimeSettingsTerminalEntrypoint(input);
   if (!entrypoint || entrypoint.status !== "ready") {
     return terminalPromptLoopBlockedResult({
@@ -850,7 +861,7 @@ export function createRuntimeSettingsTerminalPromptLoop(input = {}) {
   });
 }
 
-export function createRuntimeSettingsTerminalIoAdapter(input = {}) {
+export function createRuntimeSettingsTerminalIoAdapter(input: AnyInput = {}) {
   const terminalSession = normalizeTerminalIoSession(input.terminalSession ?? input.session ?? {});
   if (!terminalSession.admitted) {
     return terminalIoAdapterBlockedResult({
@@ -871,7 +882,7 @@ export function createRuntimeSettingsTerminalIoAdapter(input = {}) {
     : normalizeTerminalInput(input.terminalInput ?? input.input ?? input.promptInput);
   if (!terminalInput.ok) {
     return terminalIoAdapterBlockedResult({
-      blockedReason: terminalInput.blockedReason,
+      blockedReason: (terminalInput as any).blockedReason,
       terminalSession,
       terminalInput: terminalInput.value
     });
@@ -911,7 +922,7 @@ export function createRuntimeSettingsTerminalIoAdapter(input = {}) {
     terminalInput: terminalInput.value,
     promptLoop,
     transcript: promptLoop.transcript,
-    transcriptLines: promptLoop.transcript.map((step) => step.text),
+    transcriptLines: promptLoop.transcript.map((step: any) => step.text),
     copyableGuidance: promptLoop.guidance?.copyableNextCommands ?? promptLoop.entrypoint?.discoverability?.copyableNextCommands ?? [],
     promptWait: !nonInteractive,
     selectedBundle: promptLoop.selectedBundle,
@@ -921,7 +932,7 @@ export function createRuntimeSettingsTerminalIoAdapter(input = {}) {
   });
 }
 
-export function writeRuntimeSettingsFacts(input = {}) {
+export function writeRuntimeSettingsFacts(input: AnyInput = {}) {
   const effectiveSettingsTarget = normalizeEffectiveSettingsTarget(
     input.effectiveSettingsTarget ?? input.target ?? "user"
   );
@@ -950,9 +961,9 @@ export function writeRuntimeSettingsFacts(input = {}) {
 
   const nextSettings = {
     ...settings.value,
-    [RUNTIME_SETTINGS_KEYS.runtimeProvider]: facts.value.runtimeProvider,
-    [RUNTIME_SETTINGS_KEYS.labviewVersion]: facts.value.labviewVersion,
-    [RUNTIME_SETTINGS_KEYS.labviewBitness]: facts.value.labviewBitness
+    [RUNTIME_SETTINGS_KEYS.runtimeProvider]: facts.value!.runtimeProvider,
+    [RUNTIME_SETTINGS_KEYS.labviewVersion]: facts.value!.labviewVersion,
+    [RUNTIME_SETTINGS_KEYS.labviewBitness]: facts.value!.labviewBitness
   };
 
   return Object.freeze({
@@ -967,7 +978,7 @@ export function writeRuntimeSettingsFacts(input = {}) {
   });
 }
 
-export function readRuntimeSettingsValidation(input = {}) {
+export function readRuntimeSettingsValidation(input: AnyInput = {}) {
   const effectiveSettingsTarget = normalizeEffectiveSettingsTarget(
     input.effectiveSettingsTarget ?? input.target ?? "user"
   );
@@ -1008,7 +1019,7 @@ export function readRuntimeSettingsValidation(input = {}) {
   }
 
   return Object.freeze({
-    status: runtimeOutcome.value.runtimeValidationOutcome,
+    status: runtimeOutcome.value!.runtimeValidationOutcome,
     type: "runtime-settings-cli-validation-readback-contract",
     effectiveSettingsTarget,
     persistedSettings: persistedFacts.value,
@@ -1018,7 +1029,7 @@ export function readRuntimeSettingsValidation(input = {}) {
   });
 }
 
-export function createRuntimeSettingsValidationRuntimeOutcome(input = {}) {
+export function createRuntimeSettingsValidationRuntimeOutcome(input: AnyInput = {}) {
   const selection = normalizeRuntimeSelectionFacts(
     input.runtimeSelection
       ?? input.selection
@@ -1058,7 +1069,7 @@ export function createRuntimeSettingsValidationRuntimeOutcome(input = {}) {
   });
 }
 
-export function createRuntimeSettingsValidationHostRuntimePreflight(input = {}) {
+export function createRuntimeSettingsValidationHostRuntimePreflight(input: AnyInput = {}) {
   const selection = normalizeHostRuntimePreflightSelection(input);
   if (!selection.ok) {
     return hostRuntimePreflightBlockedResult({
@@ -1083,8 +1094,8 @@ export function createRuntimeSettingsValidationHostRuntimePreflight(input = {}) 
     });
   }
 
-  const analyses = candidateSet.value.map((candidate) => analyzeHostRuntimePreflightCandidate(candidate, selection.value));
-  const compatible = analyses.filter((analysis) => analysis.compatible);
+  const analyses = candidateSet.value.map((candidate: any) => analyzeHostRuntimePreflightCandidate(candidate, selection.value));
+  const compatible = analyses.filter((analysis: any) => analysis.compatible);
 
   if (compatible.length === 0) {
     return hostRuntimePreflightBlockedResult({
@@ -1123,7 +1134,7 @@ export function createRuntimeSettingsValidationHostRuntimePreflight(input = {}) 
   });
 }
 
-export function createRuntimeSettingsValidationHostRuntimeDiscovery(input = {}) {
+export function createRuntimeSettingsValidationHostRuntimeDiscovery(input: AnyInput = {}) {
   const selection = normalizeHostRuntimePreflightSelection(input);
   if (!selection.ok) {
     return hostRuntimeDiscoveryBlockedResult({
@@ -1201,7 +1212,7 @@ export function createRuntimeSettingsValidationHostRuntimeDiscovery(input = {}) 
   });
 }
 
-export function createRuntimeSettingsValidationHostRuntimeObservation(input = {}) {
+export function createRuntimeSettingsValidationHostRuntimeObservation(input: AnyInput = {}) {
   const selection = normalizeHostRuntimePreflightSelection(input);
   if (!selection.ok) {
     return hostRuntimeObservationBlockedResult({
@@ -1282,7 +1293,7 @@ export function createRuntimeSettingsValidationHostRuntimeObservation(input = {}
   });
 }
 
-export function createRuntimeSettingsValidationHostRuntimeObservationSourceAdapter(input = {}) {
+export function createRuntimeSettingsValidationHostRuntimeObservationSourceAdapter(input: AnyInput = {}) {
   const selection = normalizeHostRuntimePreflightSelection(input);
   if (!selection.ok) {
     return hostRuntimeObservationSourceBlockedResult({
@@ -1368,7 +1379,7 @@ export function createRuntimeSettingsValidationHostRuntimeObservationSourceAdapt
   });
 }
 
-export function createRuntimeSettingsValidationHostRuntimeObservationSourceAcquisition(input = {}) {
+export function createRuntimeSettingsValidationHostRuntimeObservationSourceAcquisition(input: AnyInput = {}) {
   const selection = normalizeHostRuntimePreflightSelection(input);
   if (!selection.ok) {
     return hostRuntimeObservationSourceAcquisitionBlockedResult({
@@ -1454,7 +1465,7 @@ export function createRuntimeSettingsValidationHostRuntimeObservationSourceAcqui
   });
 }
 
-export function createRuntimeSettingsValidationHostRuntimeObservationNativeSourceAcquisition(input = {}) {
+export function createRuntimeSettingsValidationHostRuntimeObservationNativeSourceAcquisition(input: AnyInput = {}) {
   const selection = normalizeHostRuntimePreflightSelection(input);
   if (!selection.ok) {
     return hostRuntimeObservationNativeSourceAcquisitionBlockedResult({
@@ -1545,7 +1556,7 @@ export function createRuntimeSettingsValidationHostRuntimeObservationNativeSourc
   });
 }
 
-export function createRuntimeSettingsValidationHostRuntimeObservationNativeSourceProbe(input = {}) {
+export function createRuntimeSettingsValidationHostRuntimeObservationNativeSourceProbe(input: AnyInput = {}) {
   const selection = normalizeHostRuntimePreflightSelection(input);
   if (!selection.ok) {
     return hostRuntimeObservationNativeSourceProbeBlockedResult({
@@ -1636,7 +1647,7 @@ export function createRuntimeSettingsValidationHostRuntimeObservationNativeSourc
   });
 }
 
-export function createRuntimeSettingsValidationProofArtifact(input = {}) {
+export function createRuntimeSettingsValidationProofArtifact(input: AnyInput = {}) {
   const validation = normalizeValidationProofFacts(input.validation ?? input.validationFacts ?? input);
   if (!validation.ok) {
     return validationProofBlockedResult(validation.blockedReason);
@@ -1693,7 +1704,7 @@ export function createRuntimeSettingsValidationProofIssueBody(proofJson = {}) {
   ].join("\n");
 }
 
-export function createRuntimeSettingsValidationProofOutAdapter(input = {}) {
+export function createRuntimeSettingsValidationProofOutAdapter(input: AnyInput = {}) {
   const request = normalizeValidationProofOutRequest(input.request ?? input.proofOutRequest ?? input, input);
   if (!request.ok) {
     return validationProofOutBlockedResult({
@@ -1739,7 +1750,7 @@ export function createRuntimeSettingsValidationProofOutAdapter(input = {}) {
   });
 }
 
-export async function writeRuntimeSettingsValidationProofOutFiles(input = {}) {
+export async function writeRuntimeSettingsValidationProofOutFiles(input: AnyInput = {}) {
   const adapter = input.proofOutAdapter
     ?? input.validationProofOutAdapter
     ?? input.adapter
@@ -1778,13 +1789,13 @@ export async function writeRuntimeSettingsValidationProofOutFiles(input = {}) {
     }
   } catch (error) {
     const failedFile = writePlan.files
-      .find((file) => !completedFiles.some((completed) => completed.relativePath === file.result.relativePath));
+      .find((file: any) => !completedFiles.some((completed: any) => completed.relativePath === file.result.relativePath));
 
     return validationProofOutFileEmissionBlockedResult({
       blockedReason: "proof-out-file-emission-failed",
       proofOutAdapter: readyAdapter.value,
       proofOutTarget: readyAdapter.value.proofOutTarget,
-      attemptedFiles: writePlan.files.map((file) => file.result),
+      attemptedFiles: writePlan.files.map((file: any) => file.result),
       completedFiles,
       failedFile: failedFile?.result ?? null,
       errorCode: normalizeFact(error?.code) ?? "VIHS_E_PROOF_OUT_FILE_EMISSION_FAILED"
@@ -1815,7 +1826,7 @@ export async function writeRuntimeSettingsValidationProofOutFiles(input = {}) {
   });
 }
 
-export async function createRuntimeSettingsValidationCommandResult(input = {}) {
+export async function createRuntimeSettingsValidationCommandResult(input: AnyInput = {}) {
   const request = normalizeValidationCommandRequest(input);
   if (!request.ok) {
     return validationCommandContractResult({
@@ -1905,7 +1916,7 @@ export async function createRuntimeSettingsValidationCommandResult(input = {}) {
   });
 }
 
-function resolveValidationCommandRuntimeSelection(input = {}) {
+function resolveValidationCommandRuntimeSelection(input: AnyInput = {}) {
   const explicitRuntimeSelection = input.runtimeSelection
     ?? input.runtimeFacts
     ?? input.runtime;
@@ -2174,7 +2185,7 @@ function resolveValidationCommandRuntimeSelection(input = {}) {
   return input.selection;
 }
 
-function hasValidationCommandHostPreflightFacts(input = {}) {
+function hasValidationCommandHostPreflightFacts(input: AnyInput = {}) {
   return input.hostSelection !== undefined
     || input.hostRuntimeSelection !== undefined
     || input.hostRuntimeFacts !== undefined
@@ -2185,7 +2196,7 @@ function hasValidationCommandHostPreflightFacts(input = {}) {
     || input.candidates !== undefined;
 }
 
-function hasValidationCommandHostRuntimeObservationSourceFacts(input = {}) {
+function hasValidationCommandHostRuntimeObservationSourceFacts(input: AnyInput = {}) {
   return input.hostRuntimeObservationSourceAdapter !== undefined
     || input.runtimeObservationSourceAdapter !== undefined
     || input.observationSourceAdapter !== undefined
@@ -2209,7 +2220,7 @@ function hasValidationCommandHostRuntimeObservationSourceFacts(input = {}) {
     || input.observationSourceDependencies !== undefined;
 }
 
-function hasValidationCommandHostRuntimeObservationSourceAcquisitionFacts(input = {}) {
+function hasValidationCommandHostRuntimeObservationSourceAcquisitionFacts(input: AnyInput = {}) {
   return input.hostRuntimeObservationSourceAcquisition !== undefined
     || input.runtimeObservationSourceAcquisition !== undefined
     || input.observationSourceAcquisition !== undefined
@@ -2236,7 +2247,7 @@ function hasValidationCommandHostRuntimeObservationSourceAcquisitionFacts(input 
     || input.registryViewAcquisitions !== undefined;
 }
 
-function hasValidationCommandHostRuntimeObservationNativeSourceProbeFacts(input = {}) {
+function hasValidationCommandHostRuntimeObservationNativeSourceProbeFacts(input: AnyInput = {}) {
   return input.hostRuntimeObservationNativeSourceProbe !== undefined
     || input.runtimeObservationNativeSourceProbe !== undefined
     || input.nativeSourceProbe !== undefined
@@ -2259,7 +2270,7 @@ function hasValidationCommandHostRuntimeObservationNativeSourceProbeFacts(input 
     || input.windowsRegistryViewNativeProbes !== undefined;
 }
 
-function hasValidationCommandHostRuntimeObservationNativeSourceAcquisitionFacts(input = {}) {
+function hasValidationCommandHostRuntimeObservationNativeSourceAcquisitionFacts(input: AnyInput = {}) {
   return input.hostRuntimeObservationNativeSourceAcquisition !== undefined
     || input.runtimeObservationNativeSourceAcquisition !== undefined
     || input.nativeSourceAcquisition !== undefined
@@ -2282,7 +2293,7 @@ function hasValidationCommandHostRuntimeObservationNativeSourceAcquisitionFacts(
     || input.nativeRegistryViewAcquisitions !== undefined;
 }
 
-function hasValidationCommandHostRuntimeObservationFacts(input = {}) {
+function hasValidationCommandHostRuntimeObservationFacts(input: AnyInput = {}) {
   return input.hostRuntimeObservation !== undefined
     || input.runtimeObservation !== undefined
     || input.observationAdapter !== undefined
@@ -2302,7 +2313,7 @@ function hasValidationCommandHostRuntimeObservationFacts(input = {}) {
     || input.observationFacts !== undefined;
 }
 
-function hasValidationCommandHostRuntimeDiscoveryFacts(input = {}) {
+function hasValidationCommandHostRuntimeDiscoveryFacts(input: AnyInput = {}) {
   return input.hostRuntimeDiscovery !== undefined
     || input.runtimeDiscovery !== undefined
     || input.discovery !== undefined
@@ -2321,7 +2332,7 @@ function hasValidationCommandHostRuntimeDiscoveryFacts(input = {}) {
     || input.discoveryDependencies !== undefined;
 }
 
-export function createRuntimeSettingsInteractiveSelection(input = {}) {
+export function createRuntimeSettingsInteractiveSelection(input: AnyInput = {}) {
   const selectionResult = resolveInteractiveSelection(input);
   if (!selectionResult.ok) {
     return interactiveSelectionBlockedResult(selectionResult);
@@ -2344,7 +2355,7 @@ export function createRuntimeSettingsInteractiveSelection(input = {}) {
   });
 }
 
-function resolveInteractiveSelection(input) {
+function resolveInteractiveSelection(input: AnyInput) {
   const requestedSelection = input.requestedSelection ?? input.selection;
   if (isPlainObject(requestedSelection)) {
     return validateRequestedInteractiveSelection(
@@ -2374,16 +2385,16 @@ function resolveInteractiveSelection(input) {
   return {
     ok: true,
     value: freezeRecord({
-      runtimeProvider: normalizeRuntimeProvider(persisted.value.runtimeProvider),
-      platform: normalizePlatform(input.platform ?? input.currentPlatform ?? defaultPlatformForProvider(persisted.value.runtimeProvider)),
-      labviewVersion: persisted.value.labviewVersion,
-      labviewBitness: normalizeLabviewBitness(persisted.value.labviewBitness)
+      runtimeProvider: normalizeRuntimeProvider(persisted.value!.runtimeProvider),
+      platform: normalizePlatform(input.platform ?? input.currentPlatform ?? defaultPlatformForProvider(persisted.value!.runtimeProvider)),
+      labviewVersion: persisted.value!.labviewVersion,
+      labviewBitness: normalizeLabviewBitness(persisted.value!.labviewBitness)
     }),
     defaultSelectionApplied: false
   };
 }
 
-function validateRequestedInteractiveSelection(selection, availableHostInstallations) {
+function validateRequestedInteractiveSelection(selection: any, availableHostInstallations: any) {
   if (!selection) {
     return {
       ok: false,
@@ -2446,7 +2457,7 @@ function interactiveSelectionBlockedResult(result) {
   });
 }
 
-function blockedSelection(blockedReason, selection) {
+function blockedSelection(blockedReason: any, selection: any) {
   return {
     ok: false,
     blockedReason,
@@ -2454,7 +2465,7 @@ function blockedSelection(blockedReason, selection) {
   };
 }
 
-function normalizeInteractiveSelection(selection) {
+function normalizeInteractiveSelection(selection: any) {
   const runtimeProvider = normalizeRuntimeProvider(selection.runtimeProvider ?? selection.provider);
   const platform = normalizePlatform(selection.platform);
   const labviewVersion = normalizeFact(selection.labviewVersion ?? selection.version);
@@ -2472,7 +2483,7 @@ function normalizeInteractiveSelection(selection) {
   });
 }
 
-function normalizeRequestedInteractiveSelection(selection) {
+function normalizeRequestedInteractiveSelection(selection: any) {
   const runtimeProvider = normalizeRuntimeProvider(selection.runtimeProvider ?? selection.provider);
   const platform = normalizePlatform(selection.platform ?? defaultPlatformForProvider(runtimeProvider));
   const labviewVersion = normalizeFact(selection.labviewVersion ?? selection.version);
@@ -2493,7 +2504,7 @@ function normalizeRequestedInteractiveSelection(selection) {
   });
 }
 
-function normalizeRuntimeProvider(value) {
+function normalizeRuntimeProvider(value: any) {
   const normalized = normalizeFact(value);
   if (!normalized) {
     return null;
@@ -2507,7 +2518,7 @@ function normalizeRuntimeProvider(value) {
   return normalized;
 }
 
-function normalizePlatform(value) {
+function normalizePlatform(value: any) {
   const normalized = normalizeFact(value);
   if (!normalized) {
     return null;
@@ -2528,7 +2539,7 @@ function normalizePlatform(value) {
   return lower;
 }
 
-function normalizeLabviewBitness(value) {
+function normalizeLabviewBitness(value: any) {
   const normalized = normalizeFact(value);
   if (!normalized) {
     return null;
@@ -2552,11 +2563,11 @@ function isSupportedHostYear(labviewVersion) {
   return Number.isInteger(year) && year >= 2025;
 }
 
-function hasMatchingHostInstallation(availableHostInstallations, selection) {
+function hasMatchingHostInstallation(availableHostInstallations: any, selection: any) {
   if (!Array.isArray(availableHostInstallations)) {
     return false;
   }
-  return availableHostInstallations.some((installation) => {
+  return availableHostInstallations.some((installation: any) => {
     if (!isPlainObject(installation) || installation.installed === false) {
       return false;
     }
@@ -2576,13 +2587,13 @@ function hasMatchingHostInstallation(availableHostInstallations, selection) {
 function createInteractiveSelectionOptions(availableHostInstallations) {
   const host = Array.isArray(availableHostInstallations)
     ? availableHostInstallations
-      .map((installation) => normalizeInteractiveSelection({
+      .map((installation: any) => normalizeInteractiveSelection({
         runtimeProvider: "host-native",
         platform: installation?.platform,
         labviewVersion: installation?.labviewVersion ?? installation?.version,
         labviewBitness: installation?.labviewBitness ?? installation?.bitness
       }))
-      .filter((selection) => selection && isSupportedHostYear(selection.labviewVersion))
+      .filter((selection: any) => selection && isSupportedHostYear(selection.labviewVersion))
     : [];
 
   return freezeRecord({
@@ -2598,7 +2609,7 @@ function createInteractiveSelectionOptions(availableHostInstallations) {
   });
 }
 
-function createInteractiveSelectionGuidance(selection) {
+function createInteractiveSelectionGuidance(selection: any) {
   return freezeRecord({
     copyableNextCommands: [
       createSetRuntimeCommand(selection),
@@ -2608,7 +2619,7 @@ function createInteractiveSelectionGuidance(selection) {
   });
 }
 
-function createBlockedInteractiveSelectionGuidance(blockedReason) {
+function createBlockedInteractiveSelectionGuidance(blockedReason: any) {
   return freezeRecord({
     blockedReason,
     copyableNextCommands: [
@@ -2619,7 +2630,7 @@ function createBlockedInteractiveSelectionGuidance(blockedReason) {
   });
 }
 
-function createSetRuntimeCommand(selection) {
+function createSetRuntimeCommand(selection: any) {
   const command = [
     "vihs",
     "--set-provider",
@@ -2635,7 +2646,7 @@ function createSetRuntimeCommand(selection) {
   return command.join(" ");
 }
 
-function createValidationHandoff(selection, requested) {
+function createValidationHandoff(selection: any, requested: any) {
   return freezeRecord({
     requested,
     command: RUNTIME_SETTINGS_VALIDATION_COMMAND,
@@ -2655,7 +2666,7 @@ function createPromptLoopValidationHandoff(handoff) {
   });
 }
 
-function isConfirmationAccepted(value) {
+function isConfirmationAccepted(value: any) {
   if (value === true) {
     return true;
   }
@@ -2707,7 +2718,7 @@ function terminalIoAdapterBlockedResult({
     terminalInput,
     promptLoop,
     transcript: promptLoop?.transcript ?? createBlockedPromptLoopTranscript(blockedReason),
-    transcriptLines: (promptLoop?.transcript ?? createBlockedPromptLoopTranscript(blockedReason)).map((step) => step.text),
+    transcriptLines: (promptLoop?.transcript ?? createBlockedPromptLoopTranscript(blockedReason)).map((step: any) => step.text),
     copyableGuidance: promptLoop?.guidance?.copyableNextCommands ?? [
       "vihs --help",
       RUNTIME_SETTINGS_VALIDATION_COMMAND
@@ -2752,7 +2763,7 @@ function createPromptLoopTranscript({ currentSelection, promptMode }) {
   return freezeRecord(transcript);
 }
 
-function createBlockedPromptLoopTranscript(blockedReason) {
+function createBlockedPromptLoopTranscript(blockedReason: any) {
   return freezeRecord([
     {
       kind: "heading",
@@ -2769,7 +2780,7 @@ function createBlockedPromptLoopTranscript(blockedReason) {
   ]);
 }
 
-function normalizePromptLoopCurrentSelection(selection, platform) {
+function normalizePromptLoopCurrentSelection(selection: any, platform: any) {
   if (!selection) {
     return null;
   }
@@ -2781,7 +2792,7 @@ function normalizePromptLoopCurrentSelection(selection, platform) {
   });
 }
 
-function settingsFromSelection(selection) {
+function settingsFromSelection(selection: any) {
   if (!selection) {
     return null;
   }
@@ -2792,7 +2803,7 @@ function settingsFromSelection(selection) {
   };
 }
 
-function formatRuntimeSelection(selection) {
+function formatRuntimeSelection(selection: any) {
   if (!selection) {
     return "not configured";
   }
@@ -2822,7 +2833,7 @@ function terminalEntrypointBlockedResult({ blockedReason, terminalSession = norm
   });
 }
 
-function normalizeLauncherState(value) {
+function normalizeLauncherState(value: any) {
   const normalized = normalizeFact(value);
   if (!normalized) {
     return "present";
@@ -2837,7 +2848,7 @@ function normalizeLauncherState(value) {
   return "present";
 }
 
-function resolveRuntimeLookupFacts(lookup, platform) {
+function resolveRuntimeLookupFacts(lookup: any, platform: any) {
   const isWindows = platform === "windows";
   const order = isWindows ? TERMINAL_ENTRYPOINT_RUNTIME_LOOKUP_ORDER_WINDOWS : TERMINAL_ENTRYPOINT_RUNTIME_LOOKUP_ORDER_OTHER;
   const vscodeAvailable = lookup.vscodeRuntimeAvailable === true;
@@ -2898,7 +2909,7 @@ function normalizeTerminalIoSession(session = {}) {
   });
 }
 
-function normalizeTerminalInput(input) {
+function normalizeTerminalInput(input: AnyInput) {
   if (input == null || input === "") {
     return {
       ok: true,
@@ -3012,7 +3023,7 @@ function normalizeTerminalInput(input) {
   };
 }
 
-function createDiscoverabilityFacts(bundle, platform) {
+function createDiscoverabilityFacts(bundle: any, platform: any) {
   if (!bundle) {
     return freezeRecord({
       currentBundle: null,
@@ -3071,7 +3082,7 @@ function blockedResult({ blockedReason, effectiveSettingsTarget }) {
   });
 }
 
-function validationProofBlockedResult(blockedReason) {
+function validationProofBlockedResult(blockedReason: any) {
   const validation = freezeRecord({
     status: "blocked",
     blockedReason,
@@ -3359,7 +3370,7 @@ function isPublicSafeProofOutTarget(identifier) {
   return !/(?:\/home\/|\/users\/|\\users\\|secret|password|token|credential|authorization|bearer|private)/iu.test(identifier);
 }
 
-function resolveValidationProofOutArtifact(input = {}) {
+function resolveValidationProofOutArtifact(input: AnyInput = {}) {
   const provided = input.validationProofArtifact ?? input.proofArtifact ?? input.artifact;
   if (isPlainObject(provided)) {
     return normalizeProvidedValidationProofOutArtifact(provided);
@@ -3385,7 +3396,7 @@ function resolveValidationProofOutArtifact(input = {}) {
   return normalizeProvidedValidationProofOutArtifact(artifact);
 }
 
-function normalizeValidationCommandRequest(input = {}) {
+function normalizeValidationCommandRequest(input: AnyInput = {}) {
   const requestedMode = normalizeFact(input.requestMode ?? input.mode);
   if (
     requestedMode
@@ -3624,14 +3635,14 @@ function readPersistedRuntimeSettingsFacts(settings) {
   };
 }
 
-function normalizeHostRuntimePreflightSelection(input = {}) {
+function normalizeHostRuntimePreflightSelection(input: AnyInput = {}) {
   const selection = input.selection
     ?? input.runtimeSelection
     ?? input.runtimeFacts
     ?? input.persistedSettings
     ?? input.settings
     ?? input;
-  const parsedSettings = isPlainObject(selection) && Object.values(RUNTIME_SETTINGS_KEYS).some((key) => key in selection)
+  const parsedSettings = isPlainObject(selection) && Object.values(RUNTIME_SETTINGS_KEYS).some((key: any) => key in selection)
     ? readPersistedRuntimeSettingsFacts(selection)
     : null;
   const source = parsedSettings?.ok === true ? parsedSettings.value : selection;
@@ -3672,7 +3683,7 @@ function normalizeHostRuntimePreflightSelection(input = {}) {
   };
 }
 
-function normalizeHostRuntimePreflightCandidates(input = {}) {
+function normalizeHostRuntimePreflightCandidates(input: AnyInput = {}) {
   const candidates = input.hostCandidates
     ?? input.hostRuntimeCandidates
     ?? input.availableHostInstallations
@@ -3850,7 +3861,7 @@ function isHostRuntimePreflightCliBitnessCompatible(candidate, selection) {
 }
 
 function selectHostRuntimePreflightBlockedReason(analyses) {
-  const reasons = analyses.map((analysis) => analysis.blockedReason).filter(Boolean);
+  const reasons = analyses.map((analysis: any) => analysis.blockedReason).filter(Boolean);
   for (const reason of [
     "windows-host-runtime-surface-contaminated",
     "labview-exe-not-found",
@@ -4179,7 +4190,7 @@ function normalizeHostRuntimeObservationNativeSourceProbeDependencies(input = {}
   };
 }
 
-function collectHostRuntimeObservationNativeSourceProbeDependencies(input = {}) {
+function collectHostRuntimeObservationNativeSourceProbeDependencies(input: AnyInput = {}) {
   const dependencyContainers = [];
   for (const dependencyContainer of [
     input.probeDependencies,
@@ -4461,7 +4472,7 @@ function normalizeDocumentedRootNativeSourceProbe(dependency, selection) {
   };
 }
 
-function nativeSourceProbeBlockedReasonForNativeSourceAcquisitionBlockedReason(blockedReason) {
+function nativeSourceProbeBlockedReasonForNativeSourceAcquisitionBlockedReason(blockedReason: any) {
   const mapping = {
     "missing-selection-facts": "missing-selection-facts",
     "unsupported-runtime-provider": "unsupported-runtime-provider",
@@ -4519,7 +4530,7 @@ function normalizeHostRuntimeObservationNativeSourceAcquisitionDependencies(inpu
   };
 }
 
-function collectHostRuntimeObservationNativeSourceAcquisitionDependencies(input = {}) {
+function collectHostRuntimeObservationNativeSourceAcquisitionDependencies(input: AnyInput = {}) {
   const dependencyContainers = [];
   for (const dependencyContainer of [
     input.nativeAcquisitionDependencies,
@@ -4698,7 +4709,7 @@ function normalizeHostRuntimeNativeSourceAcquisitionClass(dependency) {
   return null;
 }
 
-function nativeSourceAcquisitionBlockedReasonForSourceAcquisitionBlockedReason(blockedReason) {
+function nativeSourceAcquisitionBlockedReasonForSourceAcquisitionBlockedReason(blockedReason: any) {
   if (blockedReason === "malformed-registry-acquisition") {
     return "malformed-native-registry-acquisition";
   }
@@ -4753,7 +4764,7 @@ function normalizeHostRuntimeObservationSourceAcquisitionDependencies(input = {}
   };
 }
 
-function collectHostRuntimeObservationSourceAcquisitionDependencies(input = {}) {
+function collectHostRuntimeObservationSourceAcquisitionDependencies(input: AnyInput = {}) {
   const dependencyContainers = [];
   for (const dependencyContainer of [
     input.acquisitionDependencies,
@@ -4982,7 +4993,7 @@ function normalizeHostRuntimeObservationSourceFacts(input = {}, selection) {
   };
 }
 
-function collectHostRuntimeObservationSourceFacts(input = {}) {
+function collectHostRuntimeObservationSourceFacts(input: AnyInput = {}) {
   const sourceContainers = [];
   for (const sourceContainer of [
     input.sourceDependencies,
@@ -5160,8 +5171,8 @@ function normalizeHostRuntimeObservationSourceFact(sourceFact, selection) {
 
 function createObservationDependenciesFromSourceFacts(sourceFacts = []) {
   const facts = Array.isArray(sourceFacts) ? sourceFacts : [];
-  const windowsRegistryViewObservations = facts.filter((fact) => fact?.sourceClass === "windows-registry-view");
-  const documentedRootObservations = facts.filter((fact) => fact?.sourceClass === "documented-root");
+  const windowsRegistryViewObservations = facts.filter((fact: any) => fact?.sourceClass === "windows-registry-view");
+  const documentedRootObservations = facts.filter((fact: any) => fact?.sourceClass === "documented-root");
 
   return freezeRecord({
     windowsRegistryViewObservations: freezeRecord(windowsRegistryViewObservations),
@@ -5201,7 +5212,7 @@ function normalizeHostRuntimeObservationDependencies(input = {}, selection) {
   };
 }
 
-function collectHostRuntimeObservationDependencies(input = {}) {
+function collectHostRuntimeObservationDependencies(input: AnyInput = {}) {
   const dependencyContainers = [];
   for (const dependency of [
     input.observationDependencies,
@@ -5399,7 +5410,7 @@ function normalizeHostRuntimeDiscoveryObservations(input = {}, selection) {
   };
 }
 
-function collectHostRuntimeDiscoveryObservations(input = {}) {
+function collectHostRuntimeDiscoveryObservations(input: AnyInput = {}) {
   const dependencies = isPlainObject(input.discoveryDependencies) ? input.discoveryDependencies : {};
   const observationGroups = [
     input.documentedRootObservations ?? input.documentedRoots ?? input.rootObservations,
@@ -5595,9 +5606,9 @@ function hasRawRegistryOutput(observation) {
     || observation.registryValue !== undefined;
 }
 
-function hasPrivatePathDisclosure(value) {
+function hasPrivatePathDisclosure(value: any) {
   if (Array.isArray(value)) {
-    return value.some((item) => hasPrivatePathDisclosure(item));
+    return value.some((item: any) => hasPrivatePathDisclosure(item));
   }
   if (!isPlainObject(value)) {
     return typeof value === "string" && isPrivatePathLike(value);
@@ -5613,7 +5624,7 @@ function hasPrivatePathDisclosure(value) {
   return false;
 }
 
-function isPrivatePathLike(value) {
+function isPrivatePathLike(value: any) {
   return /^[a-z]:[\\/]/iu.test(value)
     || value.startsWith("/")
     || value.startsWith("~")
@@ -5622,7 +5633,7 @@ function isPrivatePathLike(value) {
     || value.includes("/home/");
 }
 
-function normalizePublicDiscoveryIdentifier(value) {
+function normalizePublicDiscoveryIdentifier(value: any) {
   const identifier = normalizeFact(value);
   if (!identifier || isPrivatePathLike(identifier) || /secret|password|token|credential|authorization|bearer|private/iu.test(identifier)) {
     return null;
@@ -5630,7 +5641,7 @@ function normalizePublicDiscoveryIdentifier(value) {
   return identifier.replaceAll("\\", "/").replace(/\/+$/u, "");
 }
 
-function normalizeRegistryView(value) {
+function normalizeRegistryView(value: any) {
   const normalized = normalizeFact(value)?.toLowerCase();
   if (!normalized) {
     return null;
@@ -5761,7 +5772,7 @@ function normalizeRuntimeOutcome(outcome = {}) {
   };
 }
 
-function runtimeErrorCodeForSettingsFailure(blockedReason) {
+function runtimeErrorCodeForSettingsFailure(blockedReason: any) {
   if (blockedReason === "unsupported-settings-target-shape") {
     return "VIHS_E_UNSUPPORTED_SETTINGS_TARGET_SHAPE";
   }
@@ -5771,7 +5782,7 @@ function runtimeErrorCodeForSettingsFailure(blockedReason) {
   return "VIHS_E_RUNTIME_SETTINGS_READBACK_FAILED";
 }
 
-function runtimeErrorCodeForRuntimeBlockedReason(blockedReason) {
+function runtimeErrorCodeForRuntimeBlockedReason(blockedReason: any) {
   if (blockedReason === "installed-provider-invalid" || blockedReason === "unsupported-runtime-provider") {
     return "VIHS_E_PROVIDER_INVALID";
   }
@@ -5856,7 +5867,7 @@ function runtimeErrorCodeForRuntimeBlockedReason(blockedReason) {
   return "VIHS_E_RUNTIME_VALIDATION_BLOCKED";
 }
 
-function runtimeImplementationStatusForBlockedReason(blockedReason) {
+function runtimeImplementationStatusForBlockedReason(blockedReason: any) {
   if (
     blockedReason === "docker-provider-labview-version-not-implemented"
     || blockedReason === "labview-2026q1-unsupported-on-macos"
@@ -5889,7 +5900,7 @@ function normalizeRuntimeSettingsFacts(facts) {
   };
 }
 
-function normalizeFact(value) {
+function normalizeFact(value: any) {
   if (typeof value === "string" && value.trim().length > 0) {
     return value.trim();
   }
@@ -5954,7 +5965,7 @@ function parseSettingsContent(content) {
   };
 }
 
-function validateSettingsObject(value) {
+function validateSettingsObject(value: any) {
   if (!isPlainObject(value)) {
     return {
       ok: false,
@@ -5968,7 +5979,7 @@ function validateSettingsObject(value) {
   };
 }
 
-function isPlainObject(value) {
+function isPlainObject(value: any) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 

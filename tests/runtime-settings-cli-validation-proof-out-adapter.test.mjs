@@ -8,7 +8,7 @@ import {
   createRuntimeSettingsValidationProofArtifact,
   createRuntimeSettingsValidationProofOutAdapter,
   readRuntimeSettingsValidation
-} from "../src/runtime-settings-cli.mjs";
+} from "../out/src/runtime-settings-cli.js";
 
 const sliceId = "runtime-settings-cli-validation-proof-out-v1";
 

@@ -10,15 +10,13 @@ docs/development/**
 docs/governance/**
 docs/requirements/**
 node_modules/**
-out/**
 scripts/**
 tests/**
-src/installed-user-observation.mjs
-src/runtime-contracts.mjs
-src/runtime-settings-cli.mjs
+src/**
 *.log
 *.vsix
 .gitignore
 .vscodeignore
 AGENTS.md
 package-lock.json
+tsconfig.json

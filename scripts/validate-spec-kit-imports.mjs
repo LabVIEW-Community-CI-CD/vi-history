@@ -4021,7 +4021,7 @@ requireTextIncludes("docs/development/copilot-workflow.md", [
   "createRuntimeSettingsValidationHostRuntimeObservationSourceAdapter(input =",
   "Current Implementation Admission Unit:\n`none`."
 ]);
-requireTextIncludes("src/runtime-settings-cli.mjs", [
+requireTextIncludes("src/runtime-settings-cli.ts", [
   "RUNTIME_SETTINGS_CLI_VALIDATION_HOST_RUNTIME_OBSERVATION_SOURCE_REQUIREMENTS",
   "RUNTIME_SETTINGS_VALIDATION_HOST_RUNTIME_OBSERVATION_SOURCE_BLOCKED_SIDE_EFFECTS",
   "createRuntimeSettingsValidationHostRuntimeObservationSourceAdapter",
@@ -4202,7 +4202,7 @@ requireTextIncludes("docs/development/copilot-workflow.md", [
   "createRuntimeSettingsValidationHostRuntimeObservationSourceAcquisition(input =",
   "Current Implementation Admission Unit:\n`none`."
 ]);
-requireTextIncludes("src/runtime-settings-cli.mjs", [
+requireTextIncludes("src/runtime-settings-cli.ts", [
   "RUNTIME_SETTINGS_CLI_VALIDATION_HOST_RUNTIME_OBSERVATION_SOURCE_ACQUISITION_REQUIREMENTS",
   "RUNTIME_SETTINGS_VALIDATION_HOST_RUNTIME_OBSERVATION_SOURCE_ACQUISITION_BLOCKED_SIDE_EFFECTS",
   "createRuntimeSettingsValidationHostRuntimeObservationSourceAcquisition",
@@ -4385,7 +4385,7 @@ requireTextIncludes("docs/development/copilot-workflow.md", [
   "createRuntimeSettingsValidationHostRuntimeObservationNativeSourceAcquisition(input =",
   "Current Implementation Admission Unit:\n`none`."
 ]);
-requireTextIncludes("src/runtime-settings-cli.mjs", [
+requireTextIncludes("src/runtime-settings-cli.ts", [
   "RUNTIME_SETTINGS_CLI_VALIDATION_HOST_RUNTIME_OBSERVATION_NATIVE_SOURCE_ACQUISITION_REQUIREMENTS",
   "RUNTIME_SETTINGS_VALIDATION_HOST_RUNTIME_OBSERVATION_NATIVE_SOURCE_ACQUISITION_BLOCKED_SIDE_EFFECTS",
   "createRuntimeSettingsValidationHostRuntimeObservationNativeSourceAcquisition",
@@ -4556,7 +4556,7 @@ requireTextIncludes(".vscodeignore", [
   "docs/governance/**",
   "tests/**",
   "scripts/**",
-  "src/runtime-settings-cli.mjs",
+  "src/**",
   ".gitignore",
   "package-lock.json"
 ]);
@@ -4567,7 +4567,7 @@ requireTextIncludes("scripts/package-vsix.mjs", [
 requireTextIncludes("scripts/inspect-vsix-package.mjs", [
   "extension/package.json",
   "extension/docs/requirements/",
-  "extension/src/runtime-settings-cli.mjs",
+  "extension/src/",
   "Marketplace"
 ]);
 requireTextExcludes("package.json", [

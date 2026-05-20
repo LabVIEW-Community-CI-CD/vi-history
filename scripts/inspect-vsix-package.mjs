@@ -19,7 +19,7 @@ if (!fs.existsSync(packagePath)) {
     "extension/package.json",
     "extension/readme.md",
     "extension/LICENSE.txt",
-    "extension/src/extension.mjs",
+    "extension/out/src/extension.js",
     "extension/docs/installed-user/bundled-docs-manifest.json",
     "extension/docs/installed-user/getting-started.md"
   ];
@@ -43,9 +43,9 @@ if (!fs.existsSync(packagePath)) {
     "extension/docs/governance/",
     "extension/docs/requirements/",
     "extension/node_modules/",
-    "extension/out/",
     "extension/scripts/",
-    "extension/tests/"
+    "extension/tests/",
+    "extension/src/"
   ];
   const forbiddenExactEntries = new Set([
     "extension/.gitignore",
@@ -54,7 +54,7 @@ if (!fs.existsSync(packagePath)) {
     "extension/package-lock.json",
     "extension/src/installed-user-observation.mjs",
     "extension/src/runtime-contracts.mjs",
-    "extension/src/runtime-settings-cli.mjs"
+    "extension/out/src/runtime-settings-cli.js"
   ]);
 
   for (const entry of entries) {
