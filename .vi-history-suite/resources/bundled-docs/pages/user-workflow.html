@@ -1,0 +1,98 @@
+<h1>User Workflow</h1>
+<h2>Preconditions</h2>
+<p>The shipped extension-user workflow assumes:</p>
+<ul>
+<li>the extension is installed from the VS Code Marketplace, from <code>code --install-extension</code>, or from a VSIX</li>
+<li>the workspace is trusted</li>
+<li>the target file is a tracked LabVIEW VI in a Git repository</li>
+<li>at least two commits modify that VI</li>
+<li>the runtime has been selected with <code>vihs</code></li>
+<li><code>vihs --validate</code> has been run at least once on the current machine</li>
+<li>if Docker is selected, <code>docker info</code> succeeds in the same session that launched VS Code</li>
+</ul>
+<h2>Execution Policy</h2>
+<p>Comparison generation follows the current provider-explicit installed contract.</p>
+<p>Current installed rules:</p>
+<ul>
+<li>Windows defaults to local <code>LabVIEWCLI</code> when the persisted provider is absent</li>
+<li>Docker remains a bounded expert provider selected through the published install/bootstrap surface or later <code>vihs</code> updates</li>
+<li><code>viHistorySuite.labviewVersion</code> and <code>viHistorySuite.labviewBitness</code> stay explicit across both provider classes</li>
+<li><code>vihs --validate</code> exposes whether the current bundle is <code>ready</code>, <code>needs-image-acquisition</code>, or blocked</li>
+<li>if Docker is selected, the extension derives the governed Windows or Linux image family from the current engine and fails closed on unsupported <code>x86</code></li>
+<li>if the chosen provider bundle is blocked, compare stops with next-step guidance instead of silently switching provider classes</li>
+<li>compare progress, selected provider, current engine, selected image, acquisition state, and next action stay visible in the history panel while the action runs</li>
+</ul>
+<h2>Repository Support</h2>
+<p>VI History is available on any trusted Git repository that contains eligible LabVIEW VIs.</p>
+<p>Current scope:</p>
+<ul>
+<li>the checkbox-selected compare workflow is repo-agnostic</li>
+<li>canonical benchmark and maintainer-only host-review evidence are still governed separately</li>
+<li>you do not need to be on <code>ni/labview-icon-editor</code> or <code>ni/actor-framework</code> to use the core two-commit compare flow</li>
+</ul>
+<h2>Primary Review Flow</h2>
+<ol>
+<li>Right-click an eligible VI and choose <code>VI History</code>.</li>
+<li>Review the history panel facts:<ul>
+<li>repository name</li>
+<li>relative path</li>
+<li>VI signature</li>
+<li>retained commit chronology</li>
+</ul>
+</li>
+<li>Use the checkbox column to choose the exact two retained revisions you want to compare.</li>
+<li>Review the explicit compare preflight section for the exact selected/base pair.</li>
+<li>Choose <code>Compare</code>.</li>
+</ol>
+<p>The current action model is:</p>
+<ul>
+<li><code>Checkboxes</code>: define the exact selected/base pair you want to compare</li>
+<li><code>Compare</code>: generates or reopens retained comparison evidence for the exact admitted pair</li>
+<li><code>Open at commit</code>: open the selected retained revision</li>
+<li><code>Copy hash</code>: copy the retained commit hash</li>
+<li><code>Open docs</code>: open the bundled user documentation that ships with the installed extension version</li>
+</ul>
+<p>Practical selection rule:</p>
+<ul>
+<li>any retained window with at least two commits is enough to use VI History</li>
+<li>the adjacent-pair text in a row is chronology context only; the two checked revisions define the exact compare pair</li>
+<li>the newer selected revision becomes <code>selected</code> and the older selected revision becomes <code>base</code></li>
+<li>the oldest retained revision is still selectable as the older/base side of a checkbox-selected pair</li>
+<li>there is no separate dashboard or decision-record step in the extension-user compare flow</li>
+</ul>
+<h2>Comparison Report Flow</h2>
+<p>Comparison-report generation and opening are treated as review actions inside the extension, not ad hoc shell commands.</p>
+<p>When a pair comparison is generated or refreshed, the extension retains:</p>
+<ul>
+<li>the comparison-report packet</li>
+<li>report metadata</li>
+<li>the generated NI comparison report when one exists</li>
+<li>a compact runtime summary with provider and next action</li>
+</ul>
+<p>The embedded compare view now leads with a white <code>Comparison context</code> block that foregrounds selected/base commit hash, date, author, and subject facts before any deeper runtime evidence.
+Runtime diagnostics remain retained, but they stay on packet/runtime evidence surfaces instead of leading the embedded compare view.</p>
+<p>Exact-pair compare behavior is explicit:</p>
+<ul>
+<li>select exactly two retained revisions with the checkbox column</li>
+<li>review the explicit compare preflight section for the exact selected/base pair plus runtime facts</li>
+<li>choose <code>Compare</code> to generate or reopen retained comparison evidence for that exact pair</li>
+<li>the newer selected revision becomes <code>selected</code> and the older selected revision becomes <code>base</code></li>
+<li>the oldest retained revision is still selectable as the older/base side of a checkbox-selected pair</li>
+</ul>
+<p>If you cancel before the comparison view opens, the action stays cancelled instead of opening a late result.</p>
+<h2>Trust, Progress, And Cancellation</h2>
+<p>The checkbox-selected compare workflow is trust-gated and progress-aware.</p>
+<ul>
+<li>compare actions fail closed in untrusted workspaces</li>
+<li>long-running actions show bounded progress in the extension</li>
+<li>cancellation preserves already retained evidence where possible instead of silently discarding it</li>
+<li>the extension does not wait for a separate third-step dashboard or decision-record action after the second checkbox selection</li>
+</ul>
+<h2>Bundled Documentation</h2>
+<p>The extension packages a version-matched installed-user guide so you can read workflow guidance without leaving VS Code.</p>
+<p>The packaged guide is intentionally concise: it keeps the extension-user workflow, execution-policy, and compare rules that a developer needs while omitting private GitLab plus standards/control-plane material.</p>
+<p>Open it from:</p>
+<ul>
+<li>the Command Palette via <code>VI History: Open Documentation</code></li>
+<li>the history panel via <code>Open docs</code></li>
+</ul>

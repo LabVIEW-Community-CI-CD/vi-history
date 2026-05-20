@@ -1,0 +1,18 @@
+node_modules/
+out/
+out-tests/
+dist/
+coverage/
+.vscode-test/
+*.vsix
+*.log
+.cache/
+tmp/
+assurance-*-evidence/
+
+
+# Vagrant acceptance artefacts
+vagrant/shared/
+vagrant/evidence/
+vagrant/.vagrant/
+vagrant/.vagrant-ci/
