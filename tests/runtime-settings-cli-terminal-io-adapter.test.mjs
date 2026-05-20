@@ -7,7 +7,7 @@ import {
   allRuntimeSettingsCliTerminalIoAdapterRequirementIds,
   createRuntimeSettingsTerminalEntrypoint,
   createRuntimeSettingsTerminalIoAdapter
-} from "../src/runtime-settings-cli.mjs";
+} from "../out/src/runtime-settings-cli.js";
 
 const sliceId = "runtime-settings-cli-terminal-io-adapter-v1";
 

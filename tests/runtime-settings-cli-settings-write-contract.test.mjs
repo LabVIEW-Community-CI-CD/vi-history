@@ -6,7 +6,7 @@ import {
   RUNTIME_SETTINGS_KEYS,
   allRuntimeSettingsCliSettingsWriteRequirementIds,
   writeRuntimeSettingsFacts
-} from "../src/runtime-settings-cli.mjs";
+} from "../out/src/runtime-settings-cli.js";
 
 const sliceId = "runtime-settings-cli-settings-write-v1";
 

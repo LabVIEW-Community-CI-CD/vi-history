@@ -6,7 +6,7 @@ import {
   RUNTIME_SETTINGS_INTERACTIVE_DEFAULT_SELECTION,
   allRuntimeSettingsCliInteractiveSelectionRequirementIds,
   createRuntimeSettingsInteractiveSelection
-} from "../src/runtime-settings-cli.mjs";
+} from "../out/src/runtime-settings-cli.js";
 
 const sliceId = "runtime-settings-cli-interactive-selection-v1";
 

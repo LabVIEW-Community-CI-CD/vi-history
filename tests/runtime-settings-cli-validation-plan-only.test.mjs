@@ -4,7 +4,7 @@ import test from "node:test";
 import {
   RUNTIME_SETTINGS_VALIDATION_COMMAND_BLOCKED_SIDE_EFFECTS,
   createRuntimeSettingsValidationCommandResult
-} from "../src/runtime-settings-cli.mjs";
+} from "../out/src/runtime-settings-cli.js";
 
 function readySettings() {
   return {

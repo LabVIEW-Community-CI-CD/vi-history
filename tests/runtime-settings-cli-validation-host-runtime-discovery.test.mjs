@@ -16,7 +16,7 @@ import {
   createRuntimeSettingsValidationRuntimeOutcome,
   readRuntimeSettingsValidation,
   writeRuntimeSettingsValidationProofOutFiles
-} from "../src/runtime-settings-cli.mjs";
+} from "../out/src/runtime-settings-cli.js";
 
 const sliceId = "runtime-settings-cli-validation-host-runtime-discovery-v1";
 

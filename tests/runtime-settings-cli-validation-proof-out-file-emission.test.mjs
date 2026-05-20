@@ -11,7 +11,7 @@ import {
   createRuntimeSettingsValidationProofOutAdapter,
   readRuntimeSettingsValidation,
   writeRuntimeSettingsValidationProofOutFiles
-} from "../src/runtime-settings-cli.mjs";
+} from "../out/src/runtime-settings-cli.js";
 
 const sliceId = "runtime-settings-cli-validation-proof-out-file-emission-v1";
 

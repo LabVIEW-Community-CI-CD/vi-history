@@ -53,17 +53,15 @@ test("VSIX ignore rules exclude governance tests scripts caches and generated ar
     "docs/development/**",
     "tests/**",
     "scripts/**",
-    "src/installed-user-observation.mjs",
-    "src/runtime-contracts.mjs",
-    "src/runtime-settings-cli.mjs",
+    "src/**",
     "node_modules/**",
     "dist/**",
-    "out/**",
     ".cache/**",
     "*.vsix",
     ".gitignore",
     "AGENTS.md",
-    "package-lock.json"
+    "package-lock.json",
+    "tsconfig.json"
   ]) {
     assert.ok(vscodeIgnore.includes(expected), `${expected} must be excluded from VSIX`);
   }
