@@ -19,7 +19,7 @@ const forbidden = [
   "SEE LICENSE " + "IN LICENSE",
   "vi-history-suite" + ".git"
 ];
-const ignoredDirectories = new Set([".git", "node_modules", "coverage", ".cache", "out", "dist"]);
+const ignoredDirectories = new Set([".git", "node_modules", "coverage", ".cache", "out", "dist", ".vi-history-suite"]);
 const failures = [];
 
 function readJson(fullPath) {
