@@ -268,7 +268,7 @@ function normalizeNotes(notes: unknown): readonly string[] {
 }
 
 function freezeRecord<T extends object>(record: T): Readonly<T> {
-  for (const [, value] of Object.entries(record)) {
+  for (const value of Object.values(record)) {
     if (value && typeof value === "object" && !Object.isFrozen(value)) {
       freezeRecord(value as object);
     }

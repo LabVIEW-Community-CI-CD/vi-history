@@ -154,9 +154,9 @@ function freezeRecord<T extends object>(record: T): Readonly<T> {
   return Object.freeze(record);
 }
 
-function normalizeDate(value: unknown, label: string): string {
+function normalizeDate(value: unknown, label: string): string | null {
   if (value === undefined || value === null || value === "") {
-    return "";
+    return null;
   }
   const date = new Date(String(value));
   if (Number.isNaN(date.getTime())) {
@@ -260,7 +260,7 @@ export interface PublicFeedbackItem {
 export interface ObservationCycle {
   readonly kind: "installed-user-observation-cycle";
   readonly observedOn: string;
-  readonly noLaterThanReviewDate: string;
+  readonly noLaterThanReviewDate: string | null;
   readonly triggers: readonly NormalizedTrigger[];
   readonly publicFeedback: readonly PublicFeedbackItem[];
   readonly due: boolean;
@@ -270,7 +270,8 @@ export interface ObservationCycle {
 }
 
 export function createObservationCycle(input: ObservationCycleInput = {}): ObservationCycle {
-  const observedOn = normalizeDate(requireValue(input.observedOn ?? input.currentDate, "observedOn"), "observedOn");
+  const observedOnValue = requireValue(input.observedOn ?? input.currentDate, "observedOn");
+  const observedOn = normalizeDate(observedOnValue, "observedOn") as string;
   const noLaterThanReviewDate = normalizeDate(input.noLaterThanReviewDate, "noLaterThanReviewDate");
   const triggers = normalizeArray(input.triggers).map(normalizeTrigger);
   const publicFeedback = normalizeArray(input.publicFeedback).map((feedback: unknown) =>

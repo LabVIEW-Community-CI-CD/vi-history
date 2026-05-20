@@ -417,6 +417,8 @@ function mapToContainerPath(hostPath: string, workspacePath: string | null): str
 function buildCommandLine(executable: string, args: readonly string[]): string {
   const escapedArgs = args.map(arg => {
     if (arg.includes(" ") || arg.includes('"')) {
+      // Note: Windows CMD handles backslashes literally in double-quoted strings,
+      // so we only escape double-quotes here. This is intentional for Windows compatibility.
       return `"${arg.replace(/"/g, '\\"')}"`;
     }
     return arg;
