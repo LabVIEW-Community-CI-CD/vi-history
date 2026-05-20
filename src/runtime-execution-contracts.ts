@@ -7,36 +7,128 @@
  * Slice: runtime-execution-contracts-v1
  */
 
-// Requirement mappings
-export const RUNTIME_EXECUTION_CONTRACTS_REQUIREMENTS = Object.freeze({
-  createComparisonReport: Object.freeze(["VHS-REQ-600"]),
-  hostNativeExecution: Object.freeze(["VHS-REQ-601"]),
-  dockerExecution: Object.freeze(["VHS-REQ-602"]),
-  commandArguments: Object.freeze(["VHS-REQ-603", "VHS-REQ-604"]),
-  headlessFlag: Object.freeze(["VHS-REQ-605"]),
-  executionPlan: Object.freeze(["VHS-REQ-606"]),
-  volumeMounts: Object.freeze(["VHS-REQ-607"]),
-  dockerImage: Object.freeze(["VHS-REQ-608"]),
-  labviewCliPath: Object.freeze(["VHS-REQ-609"]),
-  outputCapture: Object.freeze(["VHS-REQ-610"]),
-  exitCode: Object.freeze(["VHS-REQ-611"])
-});
+// ============================================================================
+// Type Definitions
+// ============================================================================
 
-export const RUNTIME_EXECUTION_BLOCKED_SIDE_EFFECTS = Object.freeze([
+export type ExecutionContext = "host-native" | "docker";
+export type CommandStatus = "ready" | "blocked";
+export type OutcomeStatus = "success" | "failure";
+
+export interface VolumeMount {
+  readonly host: string;
+  readonly container: string;
+}
+
+export interface CommandInputs {
+  readonly viPath1: string;
+  readonly viPath2: string;
+  readonly outputPath: string;
+  readonly reportType: string;
+}
+
+export interface HostInputs {
+  readonly viPath1: string;
+  readonly viPath2: string;
+  readonly outputPath: string;
+  readonly workspacePath: string | null;
+}
+
+export interface ComparisonReportCommandBase {
+  readonly kind: "comparison-report-command";
+  readonly status: CommandStatus;
+  readonly executionContext: ExecutionContext;
+  readonly executable: string;
+  readonly arguments: readonly string[];
+  readonly workingDirectory: string | null;
+  readonly operationName: string;
+  readonly inputs: CommandInputs;
+  readonly commandLine: string;
+  readonly blockedSideEffects: readonly string[];
+  readonly requirementIds: readonly string[];
+}
+
+export interface HostNativeComparisonReportCommand extends ComparisonReportCommandBase {
+  readonly executionContext: "host-native";
+}
+
+export interface DockerComparisonReportCommand extends ComparisonReportCommandBase {
+  readonly executionContext: "docker";
+  readonly dockerImage: string;
+  readonly volumeMounts: readonly VolumeMount[];
+  readonly headless: boolean;
+  readonly hostInputs: HostInputs;
+}
+
+export type ComparisonReportCommand = HostNativeComparisonReportCommand | DockerComparisonReportCommand;
+
+export interface ExecutionDiagnostics {
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly durationMs: number | null;
+}
+
+export interface ComparisonReportExecutionOutcome {
+  readonly kind: "comparison-report-execution-outcome";
+  readonly status: OutcomeStatus;
+  readonly executionContext: ExecutionContext;
+  readonly operationName: string;
+  readonly exitCode: number;
+  readonly success: boolean;
+  readonly diagnostics: ExecutionDiagnostics;
+  readonly outputPath: string;
+  readonly requirementIds: readonly string[];
+}
+
+export interface RuntimeDiscoveryFacts {
+  labviewCliPath?: string;
+  discoveredRuntimes?: {
+    labviewCli?: {
+      path?: string;
+    };
+  };
+  nativeAcquisition?: {
+    labviewCliPath?: string;
+  };
+}
+
+// ============================================================================
+// Requirement Constants
+// ============================================================================
+
+export const RUNTIME_EXECUTION_CONTRACTS_REQUIREMENTS = {
+  createComparisonReport: ["VHS-REQ-600"] as const,
+  hostNativeExecution: ["VHS-REQ-601"] as const,
+  dockerExecution: ["VHS-REQ-602"] as const,
+  commandArguments: ["VHS-REQ-603", "VHS-REQ-604"] as const,
+  headlessFlag: ["VHS-REQ-605"] as const,
+  executionPlan: ["VHS-REQ-606"] as const,
+  volumeMounts: ["VHS-REQ-607"] as const,
+  dockerImage: ["VHS-REQ-608"] as const,
+  labviewCliPath: ["VHS-REQ-609"] as const,
+  outputCapture: ["VHS-REQ-610"] as const,
+  exitCode: ["VHS-REQ-611"] as const
+} as const;
+
+export const RUNTIME_EXECUTION_BLOCKED_SIDE_EFFECTS = [
   "actual-labviewcli-execution",
   "actual-docker-execution",
   "file-system-writes",
   "process-spawn",
   "network-requests"
-]);
+] as const;
 
 const DOCKER_IMAGE_LATEST_LINUX = "nationalinstruments/labview:latest-linux";
+
+// ============================================================================
+// Exported Functions
+// ============================================================================
 
 /**
  * Returns all requirement IDs for runtime execution contracts.
  */
-export function allRuntimeExecutionContractsRequirementIds() {
-  const ids = new Set();
+export function allRuntimeExecutionContractsRequirementIds(): string[] {
+  const ids = new Set<string>();
   for (const reqArray of Object.values(RUNTIME_EXECUTION_CONTRACTS_REQUIREMENTS)) {
     for (const id of reqArray) {
       ids.add(id);
@@ -45,22 +137,19 @@ export function allRuntimeExecutionContractsRequirementIds() {
   return [...ids].sort();
 }
 
+export interface CreateComparisonReportInput {
+  viPath1: string;
+  viPath2: string;
+  outputPath: string;
+  executionContext: ExecutionContext;
+  runtimeDiscoveryFacts?: RuntimeDiscoveryFacts;
+  workspacePath?: string;
+}
+
 /**
  * Creates comparison report command facts for LabVIEWCLI CreateComparisonReport.
- *
- * This is a pure facts contract that returns command plan facts without
- * performing actual execution.
- *
- * @param {Object} input - Input configuration
- * @param {string} input.viPath1 - Path to first/base VI file
- * @param {string} input.viPath2 - Path to second/comparison VI file
- * @param {string} input.outputPath - Path for HTML output report
- * @param {'host-native' | 'docker'} input.executionContext - Execution environment
- * @param {Object} [input.runtimeDiscoveryFacts] - Host runtime discovery facts (for host-native)
- * @param {string} [input.workspacePath] - Host workspace path (for docker volume mounts)
- * @returns {Object} Comparison report command facts
  */
-export function createComparisonReportCommand(input = {}) {
+export function createComparisonReportCommand(input: CreateComparisonReportInput): ComparisonReportCommand {
   const viPath1 = requireString(input.viPath1, "viPath1");
   const viPath2 = requireString(input.viPath2, "viPath2");
   const outputPath = requireString(input.outputPath, "outputPath");
@@ -83,17 +172,17 @@ export function createComparisonReportCommand(input = {}) {
   });
 }
 
+export interface HostNativeCommandInput {
+  viPath1: string;
+  viPath2: string;
+  outputPath: string;
+  runtimeDiscoveryFacts?: RuntimeDiscoveryFacts;
+}
+
 /**
  * Creates host-native LabVIEWCLI CreateComparisonReport command facts.
- *
- * @param {Object} input - Input configuration
- * @param {string} input.viPath1 - Path to first/base VI file
- * @param {string} input.viPath2 - Path to second/comparison VI file
- * @param {string} input.outputPath - Path for HTML output report
- * @param {Object} [input.runtimeDiscoveryFacts] - Host runtime discovery facts
- * @returns {Object} Host-native command facts
  */
-export function createHostNativeComparisonReportCommand(input = {}) {
+export function createHostNativeComparisonReportCommand(input: HostNativeCommandInput): HostNativeComparisonReportCommand {
   const viPath1 = requireString(input.viPath1, "viPath1");
   const viPath2 = requireString(input.viPath2, "viPath2");
   const outputPath = requireString(input.outputPath, "outputPath");
@@ -109,9 +198,9 @@ export function createHostNativeComparisonReportCommand(input = {}) {
   ];
 
   return freezeRecord({
-    kind: "comparison-report-command",
-    status: "ready",
-    executionContext: "host-native",
+    kind: "comparison-report-command" as const,
+    status: "ready" as const,
+    executionContext: "host-native" as const,
     executable: labviewCliPath,
     arguments: args,
     workingDirectory: null,
@@ -134,19 +223,17 @@ export function createHostNativeComparisonReportCommand(input = {}) {
   });
 }
 
+export interface DockerCommandInput {
+  viPath1: string;
+  viPath2: string;
+  outputPath: string;
+  workspacePath?: string;
+}
+
 /**
  * Creates Docker LabVIEWCLI CreateComparisonReport command facts.
- *
- * Uses the hardcoded nationalinstruments/labview:latest-linux image.
- *
- * @param {Object} input - Input configuration
- * @param {string} input.viPath1 - Path to first/base VI file (container path)
- * @param {string} input.viPath2 - Path to second/comparison VI file (container path)
- * @param {string} input.outputPath - Path for HTML output report (container path)
- * @param {string} [input.workspacePath] - Host workspace path for volume mount
- * @returns {Object} Docker command facts
  */
-export function createDockerComparisonReportCommand(input = {}) {
+export function createDockerComparisonReportCommand(input: DockerCommandInput): DockerComparisonReportCommand {
   const viPath1 = requireString(input.viPath1, "viPath1");
   const viPath2 = requireString(input.viPath2, "viPath2");
   const outputPath = requireString(input.outputPath, "outputPath");
@@ -157,7 +244,7 @@ export function createDockerComparisonReportCommand(input = {}) {
   const containerViPath2 = mapToContainerPath(viPath2, workspacePath);
   const containerOutputPath = mapToContainerPath(outputPath, workspacePath);
 
-  const volumeMounts = workspacePath
+  const volumeMounts: VolumeMount[] = workspacePath
     ? [{ host: workspacePath, container: "/workspace" }]
     : [];
 
@@ -179,9 +266,9 @@ export function createDockerComparisonReportCommand(input = {}) {
   ];
 
   return freezeRecord({
-    kind: "comparison-report-command",
-    status: "ready",
-    executionContext: "docker",
+    kind: "comparison-report-command" as const,
+    status: "ready" as const,
+    executionContext: "docker" as const,
     executable: "docker",
     arguments: dockerArgs,
     workingDirectory: null,
@@ -215,20 +302,18 @@ export function createDockerComparisonReportCommand(input = {}) {
   });
 }
 
+export interface ExecutionOutcomeInput {
+  commandFacts: ComparisonReportCommand;
+  exitCode: number;
+  stdout?: string;
+  stderr?: string;
+  durationMs?: number | null;
+}
+
 /**
  * Creates execution outcome facts from command execution results.
- *
- * This shapes raw execution results into standardized outcome facts.
- *
- * @param {Object} input - Execution results
- * @param {Object} input.commandFacts - Command facts from createComparisonReportCommand
- * @param {number} input.exitCode - Process exit code
- * @param {string} [input.stdout] - Captured stdout
- * @param {string} [input.stderr] - Captured stderr
- * @param {number} [input.durationMs] - Execution duration in milliseconds
- * @returns {Object} Execution outcome facts
  */
-export function createComparisonReportExecutionOutcome(input = {}) {
+export function createComparisonReportExecutionOutcome(input: ExecutionOutcomeInput): ComparisonReportExecutionOutcome {
   const commandFacts = requireObject(input.commandFacts, "commandFacts");
   const exitCode = requireNumber(input.exitCode, "exitCode");
   const stdout = input.stdout ?? "";
@@ -238,8 +323,8 @@ export function createComparisonReportExecutionOutcome(input = {}) {
   const success = exitCode === 0;
 
   return freezeRecord({
-    kind: "comparison-report-execution-outcome",
-    status: success ? "success" : "failure",
+    kind: "comparison-report-execution-outcome" as const,
+    status: success ? "success" as const : "failure" as const,
     executionContext: commandFacts.executionContext,
     operationName: commandFacts.operationName,
     exitCode,
@@ -257,37 +342,39 @@ export function createComparisonReportExecutionOutcome(input = {}) {
   });
 }
 
-// Helper functions
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
-function requireString(value, name) {
+function requireString(value: unknown, name: string): string {
   if (typeof value !== "string" || value.length === 0) {
     throw new Error(`${name} is required and must be a non-empty string`);
   }
   return value;
 }
 
-function requireNumber(value, name) {
+function requireNumber(value: unknown, name: string): number {
   if (typeof value !== "number" || Number.isNaN(value)) {
     throw new Error(`${name} is required and must be a number`);
   }
   return value;
 }
 
-function requireObject(value, name) {
+function requireObject<T extends object>(value: T | null | undefined, name: string): T {
   if (value === null || typeof value !== "object") {
     throw new Error(`${name} is required and must be an object`);
   }
   return value;
 }
 
-function requireExecutionContext(value) {
+function requireExecutionContext(value: unknown): ExecutionContext {
   if (value !== "host-native" && value !== "docker") {
     throw new Error(`executionContext must be 'host-native' or 'docker', got: ${value}`);
   }
   return value;
 }
 
-function deriveLabViewCliPath(runtimeDiscoveryFacts) {
+function deriveLabViewCliPath(runtimeDiscoveryFacts?: RuntimeDiscoveryFacts): string {
   if (!runtimeDiscoveryFacts) {
     // Default Windows path when no discovery facts available
     return "C:\\Program Files\\National Instruments\\LabVIEW 2026\\LabVIEWCLI.exe";
@@ -310,7 +397,7 @@ function deriveLabViewCliPath(runtimeDiscoveryFacts) {
   return "C:\\Program Files\\National Instruments\\LabVIEW 2026\\LabVIEWCLI.exe";
 }
 
-function mapToContainerPath(hostPath, workspacePath) {
+function mapToContainerPath(hostPath: string, workspacePath: string | null): string {
   if (!workspacePath) {
     return hostPath;
   }
@@ -327,7 +414,7 @@ function mapToContainerPath(hostPath, workspacePath) {
   return hostPath;
 }
 
-function buildCommandLine(executable, args) {
+function buildCommandLine(executable: string, args: readonly string[]): string {
   const escapedArgs = args.map(arg => {
     if (arg.includes(" ") || arg.includes('"')) {
       return `"${arg.replace(/"/g, '\\"')}"`;
@@ -337,7 +424,7 @@ function buildCommandLine(executable, args) {
   return `${executable} ${escapedArgs.join(" ")}`;
 }
 
-function redactPrivatePaths(text) {
+function redactPrivatePaths(text: string): string {
   // Redact common private path patterns
   return text
     .replace(/C:\\Users\\[^\\]+/gi, "C:\\Users\\[REDACTED]")
@@ -345,6 +432,6 @@ function redactPrivatePaths(text) {
     .replace(/\/Users\/[^/]+/g, "/Users/[REDACTED]");
 }
 
-function freezeRecord(obj) {
+function freezeRecord<T extends object>(obj: T): Readonly<T> {
   return Object.freeze(obj);
 }
