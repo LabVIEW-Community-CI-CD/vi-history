@@ -8,7 +8,7 @@ import {
   activate,
   allDocumentationCommandRequirementIds,
   createDocumentationCommandPanelShell
-} from "../out/src/extension.js";
+} from "../out/src/extension-contracts.js";
 
 const sliceId = "installed-user-documentation-command-v1";
 

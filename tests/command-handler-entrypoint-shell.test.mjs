@@ -5,7 +5,7 @@ import test from "node:test";
 import {
   activate,
   allEntrypointShellRequirementIds
-} from "../out/src/extension.js";
+} from "../out/src/extension-contracts.js";
 
 const sliceId = "command-handler-entrypoint-shell-v1";
 
