@@ -7,25 +7,75 @@
  * Slice: runtime-execution-docker-labviewcli-v1
  */
 
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
+import { type DockerComparisonReportCommand, type VolumeMount } from "./runtime-execution-contracts.js";
 
-// Requirement mappings
-export const DOCKER_EXECUTION_REQUIREMENTS = Object.freeze({
-  containerSpawn: Object.freeze(["VHS-REQ-630"]),
-  volumeMount: Object.freeze(["VHS-REQ-631"]),
-  headlessFlag: Object.freeze(["VHS-REQ-632"]),
-  streamCapture: Object.freeze(["VHS-REQ-633"]),
-  exitCode: Object.freeze(["VHS-REQ-634"]),
-  timeout: Object.freeze(["VHS-REQ-635"])
-});
+// ============================================================================
+// Type Definitions
+// ============================================================================
 
-export const DOCKER_EXECUTION_BLOCKED_SIDE_EFFECTS = Object.freeze([
+export type DockerExecutionStatus = "success" | "failure" | "timeout";
+
+export interface DockerExecutionDiagnostics {
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly durationMs: number;
+}
+
+export interface DockerExecutionOutcome {
+  readonly kind: "docker-execution-outcome";
+  readonly status: DockerExecutionStatus;
+  readonly executionContext: "docker";
+  readonly operationName: string;
+  readonly dockerImage: string;
+  readonly headless: boolean;
+  readonly volumeMounts: readonly VolumeMount[];
+  readonly exitCode: number;
+  readonly success: boolean;
+  readonly timedOut: boolean;
+  readonly timeoutMs?: number;
+  readonly failureReason?: string;
+  readonly diagnostics: DockerExecutionDiagnostics;
+  readonly outputPath: string;
+  readonly blockedSideEffects: readonly string[];
+  readonly requirementIds: readonly string[];
+}
+
+export interface DockerExecutionInput {
+  commandFacts: DockerComparisonReportCommand;
+  timeoutMs?: number;
+}
+
+export interface MockDockerExecutionInput {
+  commandFacts: DockerComparisonReportCommand;
+  exitCode?: number;
+  stdout?: string;
+  stderr?: string;
+  durationMs?: number;
+  timedOut?: boolean;
+  timeoutMs?: number;
+}
+
+// ============================================================================
+// Requirement Constants
+// ============================================================================
+
+export const DOCKER_EXECUTION_REQUIREMENTS = {
+  containerSpawn: ["VHS-REQ-630"] as const,
+  volumeMount: ["VHS-REQ-631"] as const,
+  headlessFlag: ["VHS-REQ-632"] as const,
+  streamCapture: ["VHS-REQ-633"] as const,
+  exitCode: ["VHS-REQ-634"] as const,
+  timeout: ["VHS-REQ-635"] as const
+} as const;
+
+export const DOCKER_EXECUTION_BLOCKED_SIDE_EFFECTS = [
   "docker-image-building",
   "multi-family-image-selection",
   "docker-availability-checking",
   "container-orchestration",
   "marketplace-publication"
-]);
+] as const;
 
 const DOCKER_IMAGE = "nationalinstruments/labview:latest-linux";
 const DEFAULT_TIMEOUT_MS = 600000; // 10 minutes
@@ -35,8 +85,8 @@ const GRACEFUL_TERM_MS = 5000;     // 5 seconds for graceful termination
 /**
  * Returns all requirement IDs for Docker execution.
  */
-export function allDockerExecutionRequirementIds() {
-  const ids = new Set();
+export function allDockerExecutionRequirementIds(): string[] {
+  const ids = new Set<string>();
   for (const reqArray of Object.values(DOCKER_EXECUTION_REQUIREMENTS)) {
     for (const id of reqArray) {
       ids.add(id);
@@ -51,13 +101,8 @@ export function allDockerExecutionRequirementIds() {
  * This function spawns a Docker container with the hardcoded
  * nationalinstruments/labview:latest-linux image and captures stdout,
  * stderr, and exit code.
- *
- * @param {Object} input - Execution input
- * @param {Object} input.commandFacts - Command facts from createDockerComparisonReportCommand
- * @param {number} [input.timeoutMs] - Execution timeout in milliseconds (default: 600000)
- * @returns {Promise<Object>} Execution outcome facts
  */
-export async function executeDockerComparisonReport(input = {}) {
+export async function executeDockerComparisonReport(input: DockerExecutionInput): Promise<DockerExecutionOutcome> {
   const commandFacts = requireCommandFacts(input.commandFacts);
   const timeoutMs = normalizeTimeout(input.timeoutMs);
 
@@ -68,9 +113,9 @@ export async function executeDockerComparisonReport(input = {}) {
     let stderr = "";
     let timedOut = false;
 
-    const childProcess = spawn(
+    const childProcess: ChildProcess = spawn(
       commandFacts.executable,  // "docker"
-      commandFacts.arguments,
+      commandFacts.arguments as string[],
       {
         shell: false
       }
@@ -100,16 +145,16 @@ export async function executeDockerComparisonReport(input = {}) {
     }, timeoutMs);
 
     // Stream capture
-    childProcess.stdout.on("data", (data) => {
+    childProcess.stdout?.on("data", (data: Buffer) => {
       stdout += data.toString();
     });
 
-    childProcess.stderr.on("data", (data) => {
+    childProcess.stderr?.on("data", (data: Buffer) => {
       stderr += data.toString();
     });
 
     // Error handling
-    childProcess.on("error", (error) => {
+    childProcess.on("error", (error: Error) => {
       clearTimeout(timeoutHandle);
       const durationMs = Date.now() - startTime;
 
@@ -162,11 +207,8 @@ export async function executeDockerComparisonReport(input = {}) {
  *
  * This returns outcome facts without actually spawning a Docker container.
  * Useful for unit testing the outcome structure.
- *
- * @param {Object} input - Mock execution input
- * @returns {Object} Mock execution outcome facts
  */
-export function createMockDockerExecution(input = {}) {
+export function createMockDockerExecution(input: MockDockerExecutionInput): DockerExecutionOutcome {
   const commandFacts = requireCommandFacts(input.commandFacts);
   const exitCode = input.exitCode ?? 0;
   const stdout = input.stdout ?? "";
@@ -210,7 +252,36 @@ export function createMockDockerExecution(input = {}) {
 
 // Helper functions
 
-function requireCommandFacts(commandFacts) {
+interface SuccessOutcomeInput {
+  commandFacts: DockerComparisonReportCommand;
+  status: "success" | "failure";
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+  durationMs: number;
+  success: boolean;
+}
+
+interface FailedOutcomeInput {
+  commandFacts: DockerComparisonReportCommand;
+  status?: "failure";
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+  durationMs: number;
+  timedOut?: boolean;
+  failureReason: string;
+}
+
+interface TimeoutOutcomeInput {
+  commandFacts: DockerComparisonReportCommand;
+  stdout: string;
+  stderr: string;
+  durationMs: number;
+  timeoutMs: number;
+}
+
+function requireCommandFacts(commandFacts: DockerComparisonReportCommand): DockerComparisonReportCommand {
   if (!commandFacts || typeof commandFacts !== "object") {
     throw new Error("commandFacts is required and must be an object");
   }
@@ -223,7 +294,7 @@ function requireCommandFacts(commandFacts) {
   return commandFacts;
 }
 
-function normalizeTimeout(timeoutMs) {
+function normalizeTimeout(timeoutMs?: number): number {
   if (timeoutMs === undefined || timeoutMs === null) {
     return DEFAULT_TIMEOUT_MS;
   }
@@ -237,78 +308,78 @@ function normalizeTimeout(timeoutMs) {
   return timeout;
 }
 
-function createSuccessOutcome({ commandFacts, status, exitCode, stdout, stderr, durationMs, success }) {
+function createSuccessOutcome(input: SuccessOutcomeInput): DockerExecutionOutcome {
   return freezeRecord({
-    kind: "docker-execution-outcome",
-    status,
-    executionContext: "docker",
-    operationName: commandFacts.operationName,
+    kind: "docker-execution-outcome" as const,
+    status: input.status,
+    executionContext: "docker" as const,
+    operationName: input.commandFacts.operationName,
     dockerImage: DOCKER_IMAGE,
     headless: true,
-    volumeMounts: commandFacts.volumeMounts,
-    exitCode,
-    success,
+    volumeMounts: input.commandFacts.volumeMounts,
+    exitCode: input.exitCode,
+    success: input.success,
     timedOut: false,
     diagnostics: {
-      stdout,
-      stderr,
-      durationMs
+      stdout: input.stdout,
+      stderr: input.stderr,
+      durationMs: input.durationMs
     },
-    outputPath: commandFacts.inputs.outputPath,
+    outputPath: input.commandFacts.inputs.outputPath,
     blockedSideEffects: DOCKER_EXECUTION_BLOCKED_SIDE_EFFECTS,
     requirementIds: allDockerExecutionRequirementIds()
   });
 }
 
-function createFailedOutcome({ commandFacts, status, exitCode, stdout, stderr, durationMs, timedOut, failureReason }) {
+function createFailedOutcome(input: FailedOutcomeInput): DockerExecutionOutcome {
   return freezeRecord({
-    kind: "docker-execution-outcome",
-    status,
-    executionContext: "docker",
-    operationName: commandFacts.operationName,
+    kind: "docker-execution-outcome" as const,
+    status: "failure" as const,
+    executionContext: "docker" as const,
+    operationName: input.commandFacts.operationName,
     dockerImage: DOCKER_IMAGE,
     headless: true,
-    volumeMounts: commandFacts.volumeMounts,
-    exitCode,
+    volumeMounts: input.commandFacts.volumeMounts,
+    exitCode: input.exitCode,
     success: false,
-    timedOut,
-    failureReason,
+    timedOut: input.timedOut ?? false,
+    failureReason: input.failureReason,
     diagnostics: {
-      stdout,
-      stderr,
-      durationMs
+      stdout: input.stdout,
+      stderr: input.stderr,
+      durationMs: input.durationMs
     },
-    outputPath: commandFacts.inputs.outputPath,
+    outputPath: input.commandFacts.inputs.outputPath,
     blockedSideEffects: DOCKER_EXECUTION_BLOCKED_SIDE_EFFECTS,
     requirementIds: allDockerExecutionRequirementIds()
   });
 }
 
-function createTimeoutOutcome({ commandFacts, stdout, stderr, durationMs, timeoutMs }) {
+function createTimeoutOutcome(input: TimeoutOutcomeInput): DockerExecutionOutcome {
   return freezeRecord({
-    kind: "docker-execution-outcome",
-    status: "timeout",
-    executionContext: "docker",
-    operationName: commandFacts.operationName,
+    kind: "docker-execution-outcome" as const,
+    status: "timeout" as const,
+    executionContext: "docker" as const,
+    operationName: input.commandFacts.operationName,
     dockerImage: DOCKER_IMAGE,
     headless: true,
-    volumeMounts: commandFacts.volumeMounts,
+    volumeMounts: input.commandFacts.volumeMounts,
     exitCode: -1,
     success: false,
     timedOut: true,
-    timeoutMs,
+    timeoutMs: input.timeoutMs,
     diagnostics: {
-      stdout,
-      stderr,
-      durationMs
+      stdout: input.stdout,
+      stderr: input.stderr,
+      durationMs: input.durationMs
     },
-    outputPath: commandFacts.inputs.outputPath,
+    outputPath: input.commandFacts.inputs.outputPath,
     blockedSideEffects: DOCKER_EXECUTION_BLOCKED_SIDE_EFFECTS,
     requirementIds: allDockerExecutionRequirementIds()
   });
 }
 
-function redactPrivatePaths(text) {
+function redactPrivatePaths(text: string): string {
   if (!text) return "";
   return text
     .replace(/C:\\Users\\[^\\]+/gi, "C:\\Users\\[REDACTED]")
@@ -316,6 +387,6 @@ function redactPrivatePaths(text) {
     .replace(/\/Users\/[^/]+/g, "/Users/[REDACTED]");
 }
 
-function freezeRecord(obj) {
+function freezeRecord<T extends object>(obj: T): Readonly<T> {
   return Object.freeze(obj);
 }

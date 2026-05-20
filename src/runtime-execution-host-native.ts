@@ -7,25 +7,72 @@
  * Slice: runtime-execution-host-native-labviewcli-v1
  */
 
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import { access, constants } from "node:fs/promises";
+import { type HostNativeComparisonReportCommand } from "./runtime-execution-contracts.js";
 
-// Requirement mappings
-export const HOST_NATIVE_EXECUTION_REQUIREMENTS = Object.freeze({
-  processSpawn: Object.freeze(["VHS-REQ-620"]),
-  streamCapture: Object.freeze(["VHS-REQ-621"]),
-  exitCode: Object.freeze(["VHS-REQ-622"]),
-  timeout: Object.freeze(["VHS-REQ-623"]),
-  termination: Object.freeze(["VHS-REQ-624"]),
-  redaction: Object.freeze(["VHS-REQ-625"])
-});
+// ============================================================================
+// Type Definitions
+// ============================================================================
 
-export const HOST_NATIVE_EXECUTION_BLOCKED_SIDE_EFFECTS = Object.freeze([
+export type HostNativeExecutionStatus = "success" | "failure" | "timeout";
+
+export interface HostNativeExecutionDiagnostics {
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly durationMs: number;
+}
+
+export interface HostNativeExecutionOutcome {
+  readonly kind: "host-native-execution-outcome";
+  readonly status: HostNativeExecutionStatus;
+  readonly executionContext: "host-native";
+  readonly operationName: string;
+  readonly exitCode: number;
+  readonly success: boolean;
+  readonly timedOut: boolean;
+  readonly timeoutMs?: number;
+  readonly failureReason?: string;
+  readonly diagnostics: HostNativeExecutionDiagnostics;
+  readonly outputPath: string;
+  readonly blockedSideEffects: readonly string[];
+  readonly requirementIds: readonly string[];
+}
+
+export interface HostNativeExecutionInput {
+  commandFacts: HostNativeComparisonReportCommand;
+  timeoutMs?: number;
+}
+
+export interface MockHostNativeExecutionInput {
+  commandFacts: HostNativeComparisonReportCommand;
+  exitCode?: number;
+  stdout?: string;
+  stderr?: string;
+  durationMs?: number;
+  timedOut?: boolean;
+  timeoutMs?: number;
+}
+
+// ============================================================================
+// Requirement Constants
+// ============================================================================
+
+export const HOST_NATIVE_EXECUTION_REQUIREMENTS = {
+  processSpawn: ["VHS-REQ-620"] as const,
+  streamCapture: ["VHS-REQ-621"] as const,
+  exitCode: ["VHS-REQ-622"] as const,
+  timeout: ["VHS-REQ-623"] as const,
+  termination: ["VHS-REQ-624"] as const,
+  redaction: ["VHS-REQ-625"] as const
+} as const;
+
+export const HOST_NATIVE_EXECUTION_BLOCKED_SIDE_EFFECTS = [
   "docker-execution",
   "labview-license-validation",
   "interactive-sessions",
   "marketplace-publication"
-]);
+] as const;
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 const MAX_TIMEOUT_MS = 3600000;    // 1 hour
@@ -34,8 +81,8 @@ const GRACEFUL_TERM_MS = 5000;     // 5 seconds for graceful termination
 /**
  * Returns all requirement IDs for host-native execution.
  */
-export function allHostNativeExecutionRequirementIds() {
-  const ids = new Set();
+export function allHostNativeExecutionRequirementIds(): string[] {
+  const ids = new Set<string>();
   for (const reqArray of Object.values(HOST_NATIVE_EXECUTION_REQUIREMENTS)) {
     for (const id of reqArray) {
       ids.add(id);
@@ -49,13 +96,8 @@ export function allHostNativeExecutionRequirementIds() {
  *
  * This function spawns LabVIEWCLI.exe as a child process and captures
  * stdout, stderr, and exit code.
- *
- * @param {Object} input - Execution input
- * @param {Object} input.commandFacts - Command facts from createHostNativeComparisonReportCommand
- * @param {number} [input.timeoutMs] - Execution timeout in milliseconds (default: 300000)
- * @returns {Promise<Object>} Execution outcome facts
  */
-export async function executeHostNativeComparisonReport(input = {}) {
+export async function executeHostNativeComparisonReport(input: HostNativeExecutionInput): Promise<HostNativeExecutionOutcome> {
   const commandFacts = requireCommandFacts(input.commandFacts);
   const timeoutMs = normalizeTimeout(input.timeoutMs);
 
@@ -64,12 +106,10 @@ export async function executeHostNativeComparisonReport(input = {}) {
   if (!executableCheck.exists) {
     return createFailedOutcome({
       commandFacts,
-      status: "failure",
       exitCode: -1,
       stdout: "",
       stderr: `LabVIEWCLI executable not found at: ${redactPath(commandFacts.executable)}`,
       durationMs: 0,
-      timedOut: false,
       failureReason: "executable-not-found"
     });
   }
@@ -80,11 +120,10 @@ export async function executeHostNativeComparisonReport(input = {}) {
     let stdout = "";
     let stderr = "";
     let timedOut = false;
-    let terminated = false;
 
-    const childProcess = spawn(
+    const childProcess: ChildProcess = spawn(
       commandFacts.executable,
-      commandFacts.arguments,
+      commandFacts.arguments as string[],
       {
         cwd: commandFacts.workingDirectory ?? undefined,
         shell: false,
@@ -95,7 +134,6 @@ export async function executeHostNativeComparisonReport(input = {}) {
     // Timeout handling
     const timeoutHandle = setTimeout(() => {
       timedOut = true;
-      terminated = true;
 
       // Try graceful termination first
       try {
@@ -117,33 +155,31 @@ export async function executeHostNativeComparisonReport(input = {}) {
     }, timeoutMs);
 
     // Stream capture
-    childProcess.stdout.on("data", (data) => {
+    childProcess.stdout?.on("data", (data: Buffer) => {
       stdout += data.toString();
     });
 
-    childProcess.stderr.on("data", (data) => {
+    childProcess.stderr?.on("data", (data: Buffer) => {
       stderr += data.toString();
     });
 
     // Error handling
-    childProcess.on("error", (error) => {
+    childProcess.on("error", (error: Error) => {
       clearTimeout(timeoutHandle);
       const durationMs = Date.now() - startTime;
 
       resolve(createFailedOutcome({
         commandFacts,
-        status: "failure",
         exitCode: -1,
         stdout: redactPrivatePaths(stdout),
         stderr: redactPrivatePaths(`Process spawn error: ${error.message}\n${stderr}`),
         durationMs,
-        timedOut: false,
         failureReason: "spawn-error"
       }));
     });
 
     // Completion handling
-    childProcess.on("close", (exitCode, signal) => {
+    childProcess.on("close", (exitCode: number | null, signal: string | null) => {
       clearTimeout(timeoutHandle);
       const durationMs = Date.now() - startTime;
 
@@ -179,11 +215,8 @@ export async function executeHostNativeComparisonReport(input = {}) {
  *
  * This returns outcome facts without actually spawning a process.
  * Useful for unit testing the outcome structure.
- *
- * @param {Object} input - Mock execution input
- * @returns {Object} Mock execution outcome facts
  */
-export function createMockHostNativeExecution(input = {}) {
+export function createMockHostNativeExecution(input: MockHostNativeExecutionInput): HostNativeExecutionOutcome {
   const commandFacts = requireCommandFacts(input.commandFacts);
   const exitCode = input.exitCode ?? 0;
   const stdout = input.stdout ?? "";
@@ -204,9 +237,9 @@ export function createMockHostNativeExecution(input = {}) {
   const success = exitCode === 0;
 
   return freezeRecord({
-    kind: "host-native-execution-outcome",
-    status: success ? "success" : "failure",
-    executionContext: "host-native",
+    kind: "host-native-execution-outcome" as const,
+    status: success ? "success" as const : "failure" as const,
+    executionContext: "host-native" as const,
     operationName: commandFacts.operationName,
     exitCode,
     success,
@@ -222,9 +255,38 @@ export function createMockHostNativeExecution(input = {}) {
   });
 }
 
-// Helper functions
+// ============================================================================
+// Helper Functions and Interfaces
+// ============================================================================
 
-function requireCommandFacts(commandFacts) {
+interface SuccessOutcomeInput {
+  commandFacts: HostNativeComparisonReportCommand;
+  status: "success" | "failure";
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+  durationMs: number;
+  success: boolean;
+}
+
+interface FailedOutcomeInput {
+  commandFacts: HostNativeComparisonReportCommand;
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+  durationMs: number;
+  failureReason: string;
+}
+
+interface TimeoutOutcomeInput {
+  commandFacts: HostNativeComparisonReportCommand;
+  stdout: string;
+  stderr: string;
+  durationMs: number;
+  timeoutMs: number;
+}
+
+function requireCommandFacts(commandFacts: HostNativeComparisonReportCommand): HostNativeComparisonReportCommand {
   if (!commandFacts || typeof commandFacts !== "object") {
     throw new Error("commandFacts is required and must be an object");
   }
@@ -237,7 +299,7 @@ function requireCommandFacts(commandFacts) {
   return commandFacts;
 }
 
-function normalizeTimeout(timeoutMs) {
+function normalizeTimeout(timeoutMs?: number): number {
   if (timeoutMs === undefined || timeoutMs === null) {
     return DEFAULT_TIMEOUT_MS;
   }
@@ -251,7 +313,7 @@ function normalizeTimeout(timeoutMs) {
   return timeout;
 }
 
-async function checkExecutableExists(executablePath) {
+async function checkExecutableExists(executablePath: string): Promise<{ exists: boolean }> {
   try {
     await access(executablePath, constants.X_OK);
     return { exists: true };
@@ -260,73 +322,73 @@ async function checkExecutableExists(executablePath) {
   }
 }
 
-function createSuccessOutcome({ commandFacts, status, exitCode, stdout, stderr, durationMs, success }) {
+function createSuccessOutcome(input: SuccessOutcomeInput): HostNativeExecutionOutcome {
   return freezeRecord({
-    kind: "host-native-execution-outcome",
-    status,
-    executionContext: "host-native",
-    operationName: commandFacts.operationName,
-    exitCode,
-    success,
+    kind: "host-native-execution-outcome" as const,
+    status: input.status,
+    executionContext: "host-native" as const,
+    operationName: input.commandFacts.operationName,
+    exitCode: input.exitCode,
+    success: input.success,
     timedOut: false,
     diagnostics: {
-      stdout,
-      stderr,
-      durationMs
+      stdout: input.stdout,
+      stderr: input.stderr,
+      durationMs: input.durationMs
     },
-    outputPath: commandFacts.inputs.outputPath,
+    outputPath: input.commandFacts.inputs.outputPath,
     blockedSideEffects: HOST_NATIVE_EXECUTION_BLOCKED_SIDE_EFFECTS,
     requirementIds: allHostNativeExecutionRequirementIds()
   });
 }
 
-function createFailedOutcome({ commandFacts, status, exitCode, stdout, stderr, durationMs, timedOut, failureReason }) {
+function createFailedOutcome(input: FailedOutcomeInput): HostNativeExecutionOutcome {
   return freezeRecord({
-    kind: "host-native-execution-outcome",
-    status,
-    executionContext: "host-native",
-    operationName: commandFacts.operationName,
-    exitCode,
+    kind: "host-native-execution-outcome" as const,
+    status: "failure" as const,
+    executionContext: "host-native" as const,
+    operationName: input.commandFacts.operationName,
+    exitCode: input.exitCode,
     success: false,
-    timedOut,
-    failureReason,
+    timedOut: false,
+    failureReason: input.failureReason,
     diagnostics: {
-      stdout,
-      stderr,
-      durationMs
+      stdout: input.stdout,
+      stderr: input.stderr,
+      durationMs: input.durationMs
     },
-    outputPath: commandFacts.inputs.outputPath,
+    outputPath: input.commandFacts.inputs.outputPath,
     blockedSideEffects: HOST_NATIVE_EXECUTION_BLOCKED_SIDE_EFFECTS,
     requirementIds: allHostNativeExecutionRequirementIds()
   });
 }
 
-function createTimeoutOutcome({ commandFacts, stdout, stderr, durationMs, timeoutMs }) {
+function createTimeoutOutcome(input: TimeoutOutcomeInput): HostNativeExecutionOutcome {
   return freezeRecord({
-    kind: "host-native-execution-outcome",
-    status: "timeout",
-    executionContext: "host-native",
-    operationName: commandFacts.operationName,
+    kind: "host-native-execution-outcome" as const,
+    status: "timeout" as const,
+    executionContext: "host-native" as const,
+    operationName: input.commandFacts.operationName,
     exitCode: -1,
     success: false,
     timedOut: true,
-    timeoutMs,
+    timeoutMs: input.timeoutMs,
     diagnostics: {
-      stdout,
-      stderr,
-      durationMs
+      stdout: input.stdout,
+      stderr: input.stderr,
+      durationMs: input.durationMs
     },
-    outputPath: commandFacts.inputs.outputPath,
+    outputPath: input.commandFacts.inputs.outputPath,
     blockedSideEffects: HOST_NATIVE_EXECUTION_BLOCKED_SIDE_EFFECTS,
     requirementIds: allHostNativeExecutionRequirementIds()
   });
 }
 
-function redactPath(path) {
+function redactPath(path: string): string {
   return redactPrivatePaths(path);
 }
 
-function redactPrivatePaths(text) {
+function redactPrivatePaths(text: string): string {
   if (!text) return "";
   return text
     .replace(/C:\\Users\\[^\\]+/gi, "C:\\Users\\[REDACTED]")
@@ -334,6 +396,6 @@ function redactPrivatePaths(text) {
     .replace(/\/Users\/[^/]+/g, "/Users/[REDACTED]");
 }
 
-function freezeRecord(obj) {
+function freezeRecord<T extends object>(obj: T): Readonly<T> {
   return Object.freeze(obj);
 }
