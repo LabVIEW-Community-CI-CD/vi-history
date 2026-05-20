@@ -1,83 +1,129 @@
 # VI History
 
-`svelderrainruiz/vi-history` is the MIT-licensed Spec Kit implementation
-authority for VI History.
+**VI History** is a VS Code extension for content-detected LabVIEW VI history
+review in Git repositories.
 
-This repository starts from requirements and Spec Kit artifacts, not from copied
-extension source. The initial baseline imported the
-`runtime-contract-host-provider-v1` requirements slice and completed admitted
-runtime-contract IAUs through proof intake. The public Spec Kit baseline also
-imports `installed-user-observation-public-surface-v1`, with
-`IAU-installed-user-observation-model-v1` implemented for T009-T013 only, and
-`command-activation-surface-v1` with
-`IAU-command-activation-manifest-contract-v1` implemented for T009-T012 only.
-`IAU-command-handler-entrypoint-shell-v1` is implemented and closed for T009-T011
-of `command-handler-entrypoint-shell-v1`. Issue #41 implements and closes
-`IAU-documentation-command-panel-shell-v1` for T009-T011 of
-`installed-user-documentation-command-v1`. Issue #43 imports
-`runtime-settings-cli-bootstrap-v1` and admits
-`IAU-runtime-settings-cli-prepare-command-shell-v1`. Issue #45 implements and
-closes it for T009-T011. Issue #47 imports
-`runtime-settings-cli-settings-write-v1` and admits
-`IAU-runtime-settings-cli-settings-write-contract-v1`; Issue #49 implements and
-closes it for T009-T012. Issue #51 imports
-`runtime-settings-cli-validation-readback-v1` and admits
-`IAU-runtime-settings-cli-validation-readback-contract-v1`; Issue #53
-implements and closes it for T009-T012. Issue #55 imports
-`runtime-settings-cli-validation-proof-v1` and admits
-`IAU-runtime-settings-cli-validation-proof-artifact-v1`; Issue #57 implements
-and closes it for T009-T012 only.
-Issue #60 imports `runtime-settings-cli-interactive-selection-v1` and admits
-`IAU-runtime-settings-cli-interactive-selection-contract-v1` for T009-T013
-only. Issue #62 implements and closes it for T009-T013 only.
-Issue #65 imports `runtime-settings-cli-terminal-entrypoint-v1` and admits
-`IAU-runtime-settings-cli-terminal-entrypoint-materialization-v1` for
-T009-T013 only. Issue #67 implements and closes it for T009-T013 only.
-Issue #71 imports `runtime-settings-cli-terminal-prompt-loop-v1` and admits
-`IAU-runtime-settings-cli-terminal-prompt-loop-v1` for T009-T013 only.
-Issue #73 implements and closes it for T009-T013 only. Issue #77 imports
-`runtime-settings-cli-terminal-io-adapter-v1` and admits
-`IAU-runtime-settings-cli-terminal-io-adapter-v1` for T009-T014 only.
-Issue #79 implements and closes it for T009-T014 only.
-Issue #81 imports `runtime-settings-cli-validation-proof-out-v1` and admits
-`IAU-runtime-settings-cli-validation-proof-out-v1` for T009-T014 only.
-Issue #83 implements and closes it for T009-T014 only.
-Issue #85 imports
-`runtime-settings-cli-validation-proof-out-file-emission-v1` and admits
-`IAU-runtime-settings-cli-validation-proof-out-file-emission-v1` for
-T009-T016 only.
-Issue #87 implements and closes it for T009-T016 only.
-Issue #89 imports `runtime-settings-cli-validation-runtime-outcome-v1` and
-admits `IAU-runtime-settings-cli-validation-runtime-outcome-v1` for
-T009-T016 only.
-Issue #91 implements and closes it for T009-T016 only.
-Issue #93 imports `runtime-settings-cli-validation-command-contract-v1` and
-admits `IAU-runtime-settings-cli-validation-command-contract-v1` for
-T009-T018 only. Issue #93 is an admission issue and must not be reused for
-implementation.
-Issue #95 implements and closes it through PR #96 for T009-T018 only.
-Issue #99 imports `runtime-settings-cli-validation-plan-only-v1` and admits
-`IAU-runtime-settings-cli-validation-plan-only-v1` for T009-T016 only.
-Issue #99 is an admission issue and must not be reused for implementation.
-Issue #101 implements and closes it for T009-T016 only; Issue #102 and PR #103
-repair and close the final plan-only command-contract behavior.
-Issue #106 imports
-`runtime-settings-cli-validation-host-runtime-preflight-v1` and admits
-`IAU-runtime-settings-cli-validation-host-runtime-preflight-v1` for
-T009-T016 only. Issue #106 is an admission issue and must not be reused for
-implementation. Issue #108 implements and closes it through PR #109 for
-T009-T016 only.
-Issue #112 imports
-`runtime-settings-cli-validation-host-preflight-command-composition-v1` and
-admits
-`IAU-runtime-settings-cli-validation-host-preflight-command-composition-v1` for
-T009-T016 only. Issue #112 is an admission issue and must not be reused for
-implementation. Issue #114 implements and closes it through PR #115 for
-T009-T016 only.
-Issue #118 imports
-`runtime-settings-cli-validation-host-runtime-discovery-v1` and admits
-`IAU-runtime-settings-cli-validation-host-runtime-discovery-v1` for
-T009-T016 only. Issue #118 is an admission issue and must not be reused for
+## Overview
+
+This extension enables LabVIEW developers to:
+
+- **View VI History**: Browse the Git history of any `.vi`, `.ctl`, or `.vit`
+  file with content-aware magic byte detection
+- **Generate Comparison Reports**: Create structured comparison reports between
+  VI versions using LabVIEW's native comparison tools
+- **Configure Runtime Settings**: Use the integrated CLI to configure LabVIEW
+  runtime providers (host or Docker)
+
+## Installation
+
+### From VSIX Artifact
+
+Build and install the extension locally:
+
+```bash
+npm install
+npm run package:vsix
+# Install dist/vi-history-0.1.0.vsix in VS Code
+```
+
+### Requirements
+
+- VS Code 1.95.0 or later
+- Git installed and available in PATH
+- (Optional) LabVIEW 2025+ for comparison report generation
+- (Optional) Docker for containerized LabVIEW execution
+
+## Features
+
+### VI File Detection
+
+The extension detects LabVIEW files by inspecting RSRC/LVIN/LVCC magic bytes,
+ensuring accurate file type identification regardless of extension.
+
+### History Panel
+
+Right-click any `.vi`, `.ctl`, or `.vit` file and select **VI History** to
+open the history panel showing all commits that modified the file.
+
+### Comparison Reports
+
+Select two commits in the history panel to generate a comparison report showing
+the differences between VI versions.
+
+### Runtime Settings CLI
+
+Configure the LabVIEW runtime provider and version using the integrated CLI:
+
+```bash
+vihs --validate          # Validate current settings
+vihs --provider host     # Use local LabVIEW installation
+vihs --provider docker   # Use Docker container
+```
+
+## Development
+
+### Prerequisites
+
+- Node.js 20+
+- npm 10+
+
+### Build
+
+```bash
+npm install
+npm run compile
+```
+
+### Test
+
+```bash
+npm test
+```
+
+### Package
+
+```bash
+npm run package:vsix
+npm run inspect:vsix
+```
+
+## Architecture
+
+The extension is organized into layers:
+
+| Layer | Description |
+|-------|-------------|
+| `src/domain/` | VI file detection, magic byte analysis |
+| `src/git/` | VS Code Git API wrapper, Git CLI operations |
+| `src/services/` | History service, eligibility indexer |
+| `src/reporting/` | Comparison reports, runtime locator |
+| `src/ui/` | History panel, dashboard |
+| `src/commands/` | Command handlers |
+| `src/tooling/` | Runtime settings CLI |
+
+## License
+
+MIT — see [LICENSE](LICENSE)
+
+## Governance
+
+This repository is the MIT implementation authority for VI History.
+
+- **Artifact-only packaging**: Local VSIX builds are enabled; Marketplace
+  publication is out of scope
+- **ADRs**: See `docs/decisions/` for architectural decisions
+- **Integration**: See ADR-004 for full suite integration details
+
+---
+
+## Historical Notes
+
+This repository was originally developed as a clean-room Spec Kit implementation
+with admission-based feature gates. Per ADR-004, the production-ready
+`.vi-history-suite/` codebase has been fully integrated under MIT license,
+enabling the full feature set.
+
+The following sections document the historical Spec Kit implementation phases:
 implementation. Issue #120 implements and closes it through PR #121 for
 T009-T016 only.
 Issue #130 imports
