@@ -7,7 +7,7 @@ import {
   createObservationCycle,
   createObservationFact,
   createRoutingDecision
-} from "../src/installed-user-observation.mjs";
+} from "../out/src/installed-user-observation.js";
 
 const sliceId = "installed-user-observation-public-surface-v1";
 

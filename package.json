@@ -48,7 +48,7 @@
     "test": "npm run validate",
     "package:vsix": "npm run compile && node scripts/package-vsix.mjs",
     "inspect:vsix": "node scripts/inspect-vsix-package.mjs",
-    "unit": "node --test out/tests/*.test.js",
+    "unit": "node --test tests/*.test.mjs",
     "validate": "npm run unit && node scripts/validate-spec-kit-imports.mjs && node scripts/check-clean-room-boundary.mjs"
   },
   "devDependencies": {

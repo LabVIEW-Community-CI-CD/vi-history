@@ -1,5 +1,3 @@
-import * as vscode from "vscode";
-
 // ============================================================================
 // Requirement Constants
 // ============================================================================
@@ -99,19 +97,33 @@ export interface RuntimeSettingsCliPrepareCommandShell {
   readonly requirementIds: readonly string[];
 }
 
+// Context interface for dependency injection (allows testing without vscode)
+export interface Disposable {
+  dispose(): void;
+}
+
+export interface CommandsAPI {
+  registerCommand(id: string, handler: () => void | unknown): Disposable;
+}
+
+export interface ExtensionContext {
+  commands: CommandsAPI;
+  subscriptions: Disposable[];
+}
+
 // ============================================================================
 // Extension Activation
 // ============================================================================
 
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(context: ExtensionContext): void {
   context.subscriptions.push(
-    vscode.commands.registerCommand("labviewViHistory.open", openHandler)
+    context.commands.registerCommand("labviewViHistory.open", openHandler)
   );
   context.subscriptions.push(
-    vscode.commands.registerCommand("labviewViHistory.openDocumentation", openDocumentationHandler)
+    context.commands.registerCommand("labviewViHistory.openDocumentation", openDocumentationHandler)
   );
   context.subscriptions.push(
-    vscode.commands.registerCommand(
+    context.commands.registerCommand(
       "labviewViHistory.prepareLocalRuntimeSettingsCli",
       prepareLocalRuntimeSettingsCliHandler
     )

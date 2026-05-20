@@ -7,11 +7,11 @@ import {
   HOST_NATIVE_EXECUTION_REQUIREMENTS,
   allHostNativeExecutionRequirementIds,
   createMockHostNativeExecution
-} from "../src/runtime-execution-host-native.mjs";
+} from "../out/src/runtime-execution-host-native.js";
 
 import {
   createHostNativeComparisonReportCommand
-} from "../src/runtime-execution-contracts.mjs";
+} from "../out/src/runtime-execution-contracts.js";
 
 const sliceId = "runtime-execution-host-native-labviewcli-v1";
 
