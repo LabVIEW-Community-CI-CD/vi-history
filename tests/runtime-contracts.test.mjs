@@ -19,7 +19,7 @@ import {
   createRuntimeSelection,
   selectProviderPolicy,
   validateWindowsDockerDesktopProofIntake
-} from "../src/runtime-contracts.mjs";
+} from "../out/src/runtime-contracts.js";
 
 const sliceId = "runtime-contract-host-provider-v1";
 

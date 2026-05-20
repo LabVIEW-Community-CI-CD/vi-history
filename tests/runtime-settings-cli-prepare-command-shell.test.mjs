@@ -6,7 +6,7 @@ import {
   activate,
   allRuntimeSettingsCliBootstrapRequirementIds,
   createRuntimeSettingsCliPrepareCommandShell
-} from "../src/extension.mjs";
+} from "../out/src/extension.js";
 
 const sliceId = "runtime-settings-cli-bootstrap-v1";
 

@@ -10,7 +10,7 @@ import {
   createComparisonReportExecutionOutcome,
   createDockerComparisonReportCommand,
   createHostNativeComparisonReportCommand
-} from "../src/runtime-execution-contracts.mjs";
+} from "../out/src/runtime-execution-contracts.js";
 
 const sliceId = "runtime-execution-contracts-v1";
 

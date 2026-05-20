@@ -7,11 +7,11 @@ import {
   DOCKER_EXECUTION_REQUIREMENTS,
   allDockerExecutionRequirementIds,
   createMockDockerExecution
-} from "../src/runtime-execution-docker.mjs";
+} from "../out/src/runtime-execution-docker.js";
 
 import {
   createDockerComparisonReportCommand
-} from "../src/runtime-execution-contracts.mjs";
+} from "../out/src/runtime-execution-contracts.js";
 
 const sliceId = "runtime-execution-docker-labviewcli-v1";
 

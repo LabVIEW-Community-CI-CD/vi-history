@@ -6,7 +6,7 @@
   "license": "MIT",
   "description": "MIT clean-room Spec Kit implementation authority for VI History.",
   "type": "module",
-  "main": "./src/extension.mjs",
+  "main": "./out/src/extension.js",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -41,14 +41,20 @@
     ]
   },
   "scripts": {
+    "compile": "tsc",
+    "watch": "tsc --watch",
+    "pretest": "npm run compile",
     "check": "npm run validate",
     "test": "npm run validate",
-    "package:vsix": "node scripts/package-vsix.mjs",
+    "package:vsix": "npm run compile && node scripts/package-vsix.mjs",
     "inspect:vsix": "node scripts/inspect-vsix-package.mjs",
     "unit": "node --test tests/*.test.mjs",
     "validate": "npm run unit && node scripts/validate-spec-kit-imports.mjs && node scripts/check-clean-room-boundary.mjs"
   },
   "devDependencies": {
-    "@vscode/vsce": "^3.9.1"
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.95.0",
+    "@vscode/vsce": "^3.9.1",
+    "typescript": "^5.9.0"
   }
 }

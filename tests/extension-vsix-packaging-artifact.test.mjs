@@ -18,9 +18,9 @@ test("VSIX packaging manifest exposes local artifact fields without publication 
   assert.equal(packageJson.version, "0.1.0");
   assert.equal(packageJson.private, false);
   assert.equal(packageJson.type, "module");
-  assert.equal(packageJson.main, "./src/extension.mjs");
+  assert.equal(packageJson.main, "./out/src/extension.js");
   assert.equal(packageJson.engines?.vscode, "^1.95.0");
-  assert.equal(packageJson.scripts?.["package:vsix"], "node scripts/package-vsix.mjs");
+  assert.equal(packageJson.scripts?.["package:vsix"], "npm run compile && node scripts/package-vsix.mjs");
   assert.equal(packageJson.scripts?.["inspect:vsix"], "node scripts/inspect-vsix-package.mjs");
   assert.equal(typeof packageJson.devDependencies?.["@vscode/vsce"], "string");
 
