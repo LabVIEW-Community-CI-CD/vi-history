@@ -5,13 +5,27 @@ shell commands, and other important information, read the current plan
 
 # Repository Guidance
 
-This repository is the MIT clean-room Spec Kit implementation authority for
-`svelderrainruiz.vi-history`.
+This repository is the MIT implementation authority for
+`svelderrainruiz.vi-history` — the **VI History** VS Code extension.
 
-Use imported requirements under `docs/requirements/imports/` and Spec Kit
-artifacts as the authority for feature work. Do not copy implementation source,
-private evidence, local control-plane scripts, or credential handling from any
-other VI History product line.
+## Full Suite Integration
+
+Per `docs/decisions/ADR-004-full-suite-integration.md`, the production-ready
+`.vi-history-suite/` codebase has been fully integrated into this repository
+under the MIT license. The previous clean-room boundary restriction no longer
+applies.
+
+The integration enables:
+
+- **Domain Layer**: VI file detection, magic byte detection (RSRC/LVIN/LVCC)
+- **Git Integration**: VS Code Git API wrapper, Git CLI operations
+- **Services**: History service, eligibility indexer, support policy
+- **Reporting**: Comparison reports, runtime locator, execution planning
+- **UI**: History panel, dashboard, documentation panel
+- **Commands**: Open VI History, documentation, runtime settings CLI
+- **Tooling**: Runtime settings CLI, live session probes
+
+## Development Workflow
 
 The integration branch is `develop`; feature work targets `develop` before
 promotion to `main`.

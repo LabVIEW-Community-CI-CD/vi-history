@@ -4,7 +4,7 @@
   "publisher": "svelderrainruiz",
   "version": "0.1.0",
   "license": "MIT",
-  "description": "MIT clean-room Spec Kit implementation authority for VI History.",
+  "description": "VS Code extension for content-detected LabVIEW VI history review in Git repositories.",
   "type": "module",
   "main": "./out/src/extension.js",
   "engines": {
@@ -19,6 +19,21 @@
   },
   "homepage": "https://github.com/svelderrainruiz/vi-history",
   "private": false,
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "VI History disables background indexing and installed comparison execution in untrusted workspaces.",
+      "restrictedConfigurations": [
+        "viHistorySuite.runtimeProvider",
+        "viHistorySuite.labviewVersion",
+        "viHistorySuite.labviewBitness"
+      ]
+    }
+  },
+  "categories": [
+    "Other",
+    "SCM Providers"
+  ],
   "activationEvents": [
     "onCommand:labviewViHistory.open",
     "onCommand:labviewViHistory.openDocumentation",
@@ -28,33 +43,116 @@
     "commands": [
       {
         "command": "labviewViHistory.open",
-        "title": "VI History"
+        "title": "VI History",
+        "category": "VI History"
       },
       {
         "command": "labviewViHistory.openDocumentation",
-        "title": "Open Documentation"
+        "title": "Open Documentation",
+        "category": "VI History"
       },
       {
         "command": "labviewViHistory.prepareLocalRuntimeSettingsCli",
-        "title": "Prepare Local Runtime Settings CLI"
+        "title": "Prepare Local Runtime Settings CLI",
+        "category": "VI History"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "labviewViHistory.open",
+          "group": "3_compare",
+          "when": "(resourceExtname == .vi || resourceExtname == .ctl || resourceExtname == .vit) && isWorkspaceTrusted"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "labviewViHistory.open",
+          "group": "3_compare",
+          "when": "(resourceExtname == .vi || resourceExtname == .ctl || resourceExtname == .vit) && isWorkspaceTrusted"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "VI History Suite",
+      "properties": {
+        "viHistorySuite.strictRsrcHeader": {
+          "type": "boolean",
+          "default": false,
+          "description": "When enabled, require the leading RSRC CRLF bytes in addition to LVIN/LVCC at offset 8."
+        },
+        "viHistorySuite.maxIndexedConcurrency": {
+          "type": "number",
+          "default": 6,
+          "minimum": 1,
+          "maximum": 16,
+          "description": "Maximum concurrent eligibility checks during repository indexing."
+        },
+        "viHistorySuite.historyWindowMode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "capped"
+          ],
+          "default": "auto",
+          "description": "How the VI History panel chooses its retained commit window. Auto loads the full file history when it fits within the automatic safety ceiling; capped uses the explicit maxHistoryEntries limit."
+        },
+        "viHistorySuite.maxHistoryEntries": {
+          "type": "number",
+          "default": 100,
+          "minimum": 2,
+          "maximum": 5000,
+          "description": "Explicit retained-commit ceiling when historyWindowMode is capped."
+        },
+        "viHistorySuite.runtimeProvider": {
+          "type": "string",
+          "enum": [
+            "host",
+            "docker"
+          ],
+          "description": "Installed-user compare provider request. Host is the default local LabVIEWCLI path; docker is a bounded expert path selected through the generated settings CLI."
+        },
+        "viHistorySuite.labviewVersion": {
+          "type": "string",
+          "description": "Installed-user LabVIEW major version for comparison reports. Use LabVIEW 2025, 2026, or a newer local version; LabVIEW 2025 and newer can open older VIs without migrating them before generating the report."
+        },
+        "viHistorySuite.labviewBitness": {
+          "type": "string",
+          "enum": [
+            "x86",
+            "x64"
+          ],
+          "description": "Installed-user LabVIEW bitness for comparison reports."
+        }
+      }
+    }
   },
   "scripts": {
+    "clean": "rimraf out coverage dist",
     "compile": "tsc",
     "watch": "tsc --watch",
     "pretest": "npm run compile",
     "check": "npm run validate",
     "test": "npm run validate",
+    "test:vitest": "vitest run --coverage",
+    "test:watch": "vitest",
     "package:vsix": "npm run compile && node scripts/package-vsix.mjs",
     "inspect:vsix": "node scripts/inspect-vsix-package.mjs",
     "unit": "node --test tests/*.test.mjs",
-    "validate": "npm run unit && node scripts/validate-spec-kit-imports.mjs && node scripts/check-clean-room-boundary.mjs"
+    "validate": "npm run unit && node scripts/validate-spec-kit-imports.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.95.0",
+    "@vitest/coverage-v8": "^4.1.4",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.1",
-    "typescript": "^5.9.0"
+    "marked": "^17.0.5",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.4"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1"
   }
 }

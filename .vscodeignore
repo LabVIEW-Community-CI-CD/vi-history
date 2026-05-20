@@ -3,6 +3,7 @@
 .github/**
 .git/**
 .specify/**
+.vi-history-suite/**
 coverage/**
 dist/**
 docs/decisions/**
@@ -13,6 +14,13 @@ node_modules/**
 scripts/**
 tests/**
 src/**
+out/src/extension-contracts.*
+out/src/installed-user-observation.*
+out/src/runtime-contracts.*
+out/src/runtime-execution-contracts.*
+out/src/runtime-execution-docker.*
+out/src/runtime-execution-host-native.*
+out/src/runtime-settings-cli.*
 *.log
 *.vsix
 .gitignore
@@ -20,3 +28,4 @@ src/**
 AGENTS.md
 package-lock.json
 tsconfig.json
+vitest.config.ts

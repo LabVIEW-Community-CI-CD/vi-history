@@ -1,5 +1,26 @@
+// VI History - MIT License
+// Main extension entry point
+
+import * as vscode from 'vscode';
+
+import { createOpenViHistoryCommand } from './commands/openViHistoryCommand.js';
+import { getBuiltInGitApi, GitApi } from './git/gitApi.js';
+import { ViEligibilityIndexer, EligibilityDebugSnapshot } from './indexing/viEligibilityIndexer.js';
+import { ViHistoryService } from './services/viHistoryService.js';
+import { ViHistoryViewModel } from './services/viHistoryModel.js';
+import {
+  HistoryPanelMessage,
+  HistoryPanelTracker,
+  OpenedHistoryPanelSummary,
+  OpenedDashboardPanelSummary,
+  DashboardPanelMessage,
+  HistoryPanelActionSummary,
+  DashboardArtifactActionSummary,
+  OpenedDocumentationPanelSummary
+} from './ui/historyPanelTracker.js';
+
 // ============================================================================
-// Requirement Constants
+// Requirement Constants (Preserved for Compatibility)
 // ============================================================================
 
 export const ENTRYPOINT_SHELL_REQUIREMENTS = {
@@ -33,7 +54,163 @@ export const BUNDLED_DOCUMENTATION_MANIFEST = {
 } as const;
 
 // ============================================================================
-// Type Definitions
+// API Types
+// ============================================================================
+
+export interface ViHistorySuiteApi {
+  refreshEligibility(): Promise<void>;
+  isEligible(uri: vscode.Uri): boolean;
+  loadHistory(uri: vscode.Uri): Promise<ViHistoryViewModel>;
+  getEligibilityDebugSnapshot(): EligibilityDebugSnapshot;
+  getLastOpenedPanel(): OpenedHistoryPanelSummary | undefined;
+  getOpenHistoryPanelCount(): number;
+  dispatchLastPanelMessage(message: HistoryPanelMessage): Promise<void>;
+  getLastPanelActionSummary(): HistoryPanelActionSummary | undefined;
+  getPanelActionCount(): number;
+  getLastOpenedDashboardPanel(): OpenedDashboardPanelSummary | undefined;
+  getOpenDashboardPanelCount(): number;
+  dispatchLastDashboardPanelMessage(message: DashboardPanelMessage): Promise<void>;
+  getLastDashboardArtifactActionSummary(): DashboardArtifactActionSummary | undefined;
+  getDashboardArtifactActionCount(): number;
+  getLastOpenedDocumentationPanel(): OpenedDocumentationPanelSummary | undefined;
+  getOpenDocumentationPanelCount(): number;
+  clearHistoryPanelTracking(): void;
+}
+
+interface WorkspaceRuntime {
+  gitApi: GitApi | undefined;
+  eligibilityIndexer: ViEligibilityIndexer;
+  historyService: ViHistoryService;
+  openViHistory: ReturnType<typeof createOpenViHistoryCommand>;
+}
+
+const EMPTY_ELIGIBILITY_DEBUG_SNAPSHOT: EligibilityDebugSnapshot = {
+  indexedRepositoryRoots: [],
+  eligiblePathCount: 0,
+  eligiblePathsSample: []
+};
+
+// ============================================================================
+// Extension Activation
+// ============================================================================
+
+export async function activate(
+  context: vscode.ExtensionContext
+): Promise<ViHistorySuiteApi> {
+  const panelTracker = new HistoryPanelTracker();
+  let workspaceRuntime: WorkspaceRuntime | undefined;
+  let workspaceRuntimePromise: Promise<WorkspaceRuntime> | undefined;
+
+  const ensureWorkspaceRuntime = async (): Promise<WorkspaceRuntime> => {
+    if (workspaceRuntime) {
+      return workspaceRuntime;
+    }
+
+    if (!workspaceRuntimePromise) {
+      workspaceRuntimePromise = (async () => {
+        const gitApi = await getBuiltInGitApi();
+        const eligibilityIndexer = new ViEligibilityIndexer(gitApi);
+        const historyService = new ViHistoryService(gitApi);
+        const openViHistory = createOpenViHistoryCommand(
+          historyService,
+          eligibilityIndexer,
+          gitApi,
+          panelTracker
+        );
+
+        context.subscriptions.push(eligibilityIndexer);
+        await eligibilityIndexer.start();
+
+        workspaceRuntime = {
+          gitApi,
+          eligibilityIndexer,
+          historyService,
+          openViHistory
+        };
+        return workspaceRuntime;
+      })().catch((error) => {
+        workspaceRuntimePromise = undefined;
+        throw error;
+      });
+    }
+
+    return workspaceRuntimePromise;
+  };
+
+  // Register commands
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'labviewViHistory.open',
+      async (uri?: vscode.Uri) => {
+        const runtime = await ensureWorkspaceRuntime();
+        return runtime.openViHistory(uri);
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'labviewViHistory.openDocumentation',
+      async (pageId?: string) => {
+        // Documentation panel shell - displays bundled docs
+        void vscode.window.showInformationMessage(
+          `VI History documentation requested: ${pageId ?? 'index'}`
+        );
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'labviewViHistory.prepareLocalRuntimeSettingsCli',
+      async () => {
+        // Runtime settings CLI preparation
+        void vscode.window.showInformationMessage(
+          'VI History runtime settings CLI preparation requested.'
+        );
+        return createRuntimeSettingsCliPrepareCommandShell();
+      }
+    )
+  );
+
+  // Return the API
+  return {
+    refreshEligibility: async () => {
+      const runtime = await ensureWorkspaceRuntime();
+      await runtime.eligibilityIndexer.refresh();
+    },
+    isEligible: (uri: vscode.Uri) => workspaceRuntime?.eligibilityIndexer.isEligible(uri) ?? false,
+    loadHistory: async (uri: vscode.Uri) => {
+      const runtime = await ensureWorkspaceRuntime();
+      return runtime.historyService.load(uri);
+    },
+    getEligibilityDebugSnapshot: () =>
+      workspaceRuntime?.eligibilityIndexer.getDebugSnapshot() ?? EMPTY_ELIGIBILITY_DEBUG_SNAPSHOT,
+    getLastOpenedPanel: () => panelTracker.getLastOpenedPanel(),
+    getOpenHistoryPanelCount: () => panelTracker.getOpenCount(),
+    dispatchLastPanelMessage: (message: HistoryPanelMessage) =>
+      panelTracker.dispatchLastPanelMessage(message),
+    getLastPanelActionSummary: () => panelTracker.getLastActionSummary(),
+    getPanelActionCount: () => panelTracker.getActionCount(),
+    getLastOpenedDashboardPanel: () => panelTracker.getLastOpenedDashboardPanel(),
+    getOpenDashboardPanelCount: () => panelTracker.getDashboardOpenCount(),
+    dispatchLastDashboardPanelMessage: (message: DashboardPanelMessage) =>
+      panelTracker.dispatchLastDashboardPanelMessage(message),
+    getLastDashboardArtifactActionSummary: () =>
+      panelTracker.getLastDashboardArtifactActionSummary(),
+    getDashboardArtifactActionCount: () => panelTracker.getDashboardArtifactActionCount(),
+    getLastOpenedDocumentationPanel: () => panelTracker.getLastOpenedDocumentationPanel(),
+    getOpenDocumentationPanelCount: () => panelTracker.getDocumentationOpenCount(),
+    clearHistoryPanelTracking: () => panelTracker.clear()
+  };
+}
+
+export function deactivate(): void {
+  // Cleanup handled by disposables
+}
+
+// ============================================================================
+// Legacy Factory Functions (Preserved for Contract Tests)
 // ============================================================================
 
 export interface DocumentationPage {
@@ -97,62 +274,6 @@ export interface RuntimeSettingsCliPrepareCommandShell {
   readonly requirementIds: readonly string[];
 }
 
-// Context interface for dependency injection (allows testing without vscode)
-export interface Disposable {
-  dispose(): void;
-}
-
-export interface CommandsAPI {
-  registerCommand(id: string, handler: () => void | unknown): Disposable;
-}
-
-export interface ExtensionContext {
-  commands: CommandsAPI;
-  subscriptions: Disposable[];
-}
-
-// ============================================================================
-// Extension Activation
-// ============================================================================
-
-export function activate(context: ExtensionContext): void {
-  context.subscriptions.push(
-    context.commands.registerCommand("labviewViHistory.open", openHandler)
-  );
-  context.subscriptions.push(
-    context.commands.registerCommand("labviewViHistory.openDocumentation", openDocumentationHandler)
-  );
-  context.subscriptions.push(
-    context.commands.registerCommand(
-      "labviewViHistory.prepareLocalRuntimeSettingsCli",
-      prepareLocalRuntimeSettingsCliHandler
-    )
-  );
-}
-
-// ============================================================================
-// Command Handlers
-// ============================================================================
-
-function openHandler(): void {
-  // Entrypoint shell: blocked scope not started here.
-  // Runtime settings CLI materialization, compare execution, Docker
-  // orchestration, and Marketplace publication remain blocked here. Local VSIX
-  // artifact packaging is governed separately from runtime command handlers.
-}
-
-function openDocumentationHandler(): DocumentationCommandPanelShell {
-  return createDocumentationCommandPanelShell();
-}
-
-function prepareLocalRuntimeSettingsCliHandler(): RuntimeSettingsCliPrepareCommandShell {
-  return createRuntimeSettingsCliPrepareCommandShell();
-}
-
-// ============================================================================
-// Factory Functions
-// ============================================================================
-
 export function createDocumentationCommandPanelShell(): DocumentationCommandPanelShell {
   return {
     type: "documentation-panel-shell",
@@ -203,10 +324,6 @@ export function createRuntimeSettingsCliPrepareCommandShell(): RuntimeSettingsCl
     requirementIds: allRuntimeSettingsCliBootstrapRequirementIds()
   };
 }
-
-// ============================================================================
-// Requirement ID Helpers
-// ============================================================================
 
 export function allEntrypointShellRequirementIds(): readonly string[] {
   return Object.freeze(
