@@ -1,0 +1,28 @@
+{
+  "name": "vi-history-suite",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    }
+  },
+  "overrideCommand": true,
+  "remoteUser": "node",
+  "postCreateCommand": "sudo install -m 0755 scripts/bootstrapLinuxVsCodeHost.js /usr/local/bin/vihs-bootstrap-vscode-linux-host && npm run public:host:bootstrap-linux && npm ci",
+  "postStartCommand": "npm run compile",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "ms-vscode.extension-test-runner",
+        "dbaeumer.vscode-eslint",
+        "github.vscode-github-actions"
+      ]
+    }
+  }
+}
